@@ -1,10 +1,7 @@
 <resources>
-    <string name="app_name">demo</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
 
     <!--zxing-->
+    <string name="app_name">demo</string>
     <string name="qrcode_scan">Scanner</string>
     <string name="qrcode_open_flashlight">Flash on</string>
     <string name="qrcode_close_flashlight">Flash off</string>
@@ -13,5 +10,5 @@
     <string name="qrcode_button_ok">Quit</string>
     <string name="qrcode_viewfinderview_status_text1">Put 2D code / bar code in the viewfinder.</string>
     <string name="qrcode_viewfinderview_status_text2">Automatic scanning</string>
-    <string name="qrcode_parsing_failed">Sorry, parsing failed, try another picture.</string>
+	<string name="qrcode_parsing_failed">Sorry, parsing failed, try another picture.</string>
 </resources>
