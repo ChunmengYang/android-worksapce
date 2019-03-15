@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
@@ -24,20 +25,20 @@ public class MainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    mTextMessage.setText(R.string.title_home);
+                    mTextMessage.setText(R.string.main_home);
                     return true;
-                case R.id.navigation_dashboard:
+                case R.id.navigation_qrcode:
                     Intent qrIntent = new Intent(Intents.Scan.ACTION);
                     qrIntent.setPackage("com.ycm.demo");
                     startActivityForResult(qrIntent, 1);
 
-                    mTextMessage.setText(R.string.title_dashboard);
+                    mTextMessage.setText(R.string.main_scan_qrcode);
                     return true;
-                case R.id.navigation_notifications:
+                case R.id.navigation_beacons:
                     Intent bleIntent = new Intent(MainActivity.this, BeaconActivity.class);
                     startActivity(bleIntent);
 
-                    mTextMessage.setText(R.string.title_notifications);
+                    mTextMessage.setText(R.string.main_scan_beacons);
                     return true;
             }
             return false;
@@ -72,4 +73,24 @@ public class MainActivity extends AppCompatActivity {
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu items for use in the action bar
+        getMenuInflater().inflate(R.menu.navigation, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.navigation_home:
+                break;
+            case R.id.navigation_qrcode:
+                break;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }

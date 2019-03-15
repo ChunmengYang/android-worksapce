@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">demo</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="main_home">Home</string>
+    <string name="main_scan_qrcode">Scan QR code</string>
+    <string name="main_scan_beacons">Scan Beacon</string>
 
     <!--zxing-->
     <string name="qrcode_scan">Scanner</string>

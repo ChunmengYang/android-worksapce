@@ -1,4 +1,7 @@
 <resources>
+    <string name="main_home">Home</string>
+    <string name="main_scan_qrcode">扫描二维码</string>
+    <string name="main_scan_beacons">扫描信标</string>
 
     <!--zxing-->
     <string name="app_name">demo</string>
