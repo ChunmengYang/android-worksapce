@@ -22,9 +22,9 @@ import com.ycm.demo.beacon.iBeacon;
 import com.ycm.demo.beacon.iBeaconUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class BeaconActivity extends AppCompatActivity {
     private static final String LCAT = "BeaconActivity";
@@ -78,6 +78,13 @@ public class BeaconActivity extends AppCompatActivity {
             }
             mBleScanCallback = new BleScanCallback();
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+            mFromScanDataThread = new FromScanDataThread();
+        }
+
+        if (mFromScanDataThread != null) {
+            queue.clear();
+            mFromScanDataThread.start();
         }
         if (mBluetoothLeScanner != null) {
             mBluetoothLeScanner.startScan(mBleScanCallback);
@@ -119,6 +126,11 @@ public class BeaconActivity extends AppCompatActivity {
             mBluetoothLeScanner.stopScan(mBleScanCallback);
             Log.d(LCAT, "======Stop Scanning======");
         }
+
+        if (mFromScanDataThread != null) {
+            mFromScanDataThread.setRunStatus(false);
+            Log.d(LCAT, "======Stop FromScanDataThread======");
+        }
     }
 
     @Override
@@ -129,6 +141,7 @@ public class BeaconActivity extends AppCompatActivity {
         mBluetoothAdapter = null;
         mBluetoothLeScanner = null;
         mBleScanCallback = null;
+        mFromScanDataThread = null;
     }
 
     /**
@@ -139,29 +152,37 @@ public class BeaconActivity extends AppCompatActivity {
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             if (result == null) return;
-            iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-            if(ibeacon == null) return;
 
-            addDevice(ibeacon);
-            Collections.sort(mLeDevices, new Comparator<iBeacon>() {
-                @Override
-                public int compare(iBeacon h1, iBeacon h2) {
-                    return h2.rssi - h1.rssi;
-                }
-            });
-
-            String msg = "";
-            for (iBeacon item : mLeDevices) {
-                msg += "UUID:" + item.proximityUuid + ",\nmajor:" + item.major + ",\nminor:" + item.minor + "\naddress:" + item.bluetoothAddress + "\n";
+            Log.d(LCAT, Thread.currentThread().getId() + "======BleScanCallback======:" + result.getDevice().getAddress());
+            synchronized (queue) {
+                queue.offer(result);
+                queue.notify();
             }
 
-            final String text = msg;
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    view.setText(text);
-                }
-            });
+
+//            iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
+//            if(ibeacon == null) return;
+//
+//            addDevice(ibeacon);
+//            Collections.sort(mLeDevices, new Comparator<iBeacon>() {
+//                @Override
+//                public int compare(iBeacon h1, iBeacon h2) {
+//                    return h2.rssi - h1.rssi;
+//                }
+//            });
+//
+//            String msg = "";
+//            for (iBeacon item : mLeDevices) {
+//                msg += "UUID:" + item.proximityUuid + ",\nmajor:" + item.major + ",\nminor:" + item.minor + "\naddress:" + item.bluetoothAddress + "\n";
+//            }
+//
+//            final String text = msg;
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    view.setText(text);
+//                }
+//            });
         }
 
         @Override
@@ -196,5 +217,67 @@ public class BeaconActivity extends AppCompatActivity {
             }
         }
         mLeDevices.add(device);
+    }
+
+    private FromScanDataThread mFromScanDataThread;
+    private java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
+        @Override
+        public int compare(ScanResult o1, ScanResult o2) {
+            if(o1.getRssi() <= o2.getRssi()){
+                return 1;
+            }
+            else
+                return -1;
+        }
+    });
+
+    private class FromScanDataThread extends Thread {
+        private boolean runStatus = true;
+        public void  setRunStatus(boolean status) {
+            this.runStatus = status;
+            synchronized (queue) {
+                queue.clear();
+                queue.notify();
+            }
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                synchronized (queue) {
+                    while(queue.size() == 0 && this.runStatus) {
+                        try {
+                            queue.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            queue.notify();
+                        }
+                    }
+
+                    if(queue.size() != 0) {
+                        ScanResult result = queue.poll();
+                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
+
+                        iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
+                        if(ibeacon != null && ibeacon.bluetoothAddress != null) {
+                            final String msg = "UUID:" + ibeacon.proximityUuid + ",\nmajor:" + ibeacon.major + ",\nminor:" + ibeacon.minor + "\naddress:" + ibeacon.bluetoothAddress + "\nrssi:" +ibeacon.rssi + "\n";
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + msg);
+
+                                    view.setText(msg);
+                                }
+                            });
+                        }
+                    }
+                }
+
+                if(!this.runStatus){
+                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread End======");
+                    return;
+                }
+            }
+        }
     }
 }
