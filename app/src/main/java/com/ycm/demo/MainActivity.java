@@ -1,18 +1,29 @@
 package com.ycm.demo;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.ListPopupWindow;
 import android.widget.TextView;
 
 import com.ycm.zxinglibrary.android.Intents;
 import com.ycm.zxinglibrary.common.Constant;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -85,6 +96,17 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.navigation_home:
+                ListPopupWindow mListPop = new ListPopupWindow(this);
+                List<MyMenu> lists = new ArrayList<MyMenu>();
+                lists.add(new MyMenu(R.drawable.ic_scan_qrcode_24dp, getResources().getString(R.string.main_scan_qrcode)));
+                lists.add(new MyMenu(R.drawable.ic_scan_beacons_24dp, getResources().getString(R.string.main_scan_beacons)));
+
+                mListPop.setAdapter(new MyArrayAdapter(this, R.layout.my_menu, lists));
+                mListPop.setWidth(ConstraintLayout.LayoutParams.WRAP_CONTENT);
+                mListPop.setHeight(ConstraintLayout.LayoutParams.WRAP_CONTENT);
+                mListPop.setAnchorView(mTextMessage);
+                mListPop.setModal(true);
+                mListPop.show();
                 break;
             case R.id.navigation_qrcode:
                 break;
@@ -92,5 +114,40 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+    private class MyMenu {
+        public int icon;
+        public String title;
+
+        public MyMenu(int icon, String title) {
+            this.icon = icon;
+            this.title = title;
+        }
+    }
+    private class MyArrayAdapter extends ArrayAdapter<MyMenu> {
+        private int resource;
+        private List<MyMenu> objects;
+
+        public MyArrayAdapter(Context context, int resource, List<MyMenu> objects) {
+            super(context, resource, objects);
+
+            this.resource = resource;
+            this.objects = objects;
+        }
+
+        @Override
+        public View getView(int position, View convertView,ViewGroup parent) {
+            MyMenu item = getItem(position);
+            LayoutInflater inflater = getLayoutInflater();
+            View view = inflater.inflate(resource, null);
+            ImageView iconView = (ImageView) view.findViewById(R.id.my_menu_icon);
+            TextView titleView = (TextView) view.findViewById(R.id.my_menu_title);
+            iconView.setImageResource(item.icon);
+            titleView.setText(item.title);
+
+            return view;
+        }
     }
 }
