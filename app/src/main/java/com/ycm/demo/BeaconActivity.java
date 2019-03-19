@@ -36,6 +36,8 @@ public class BeaconActivity extends AppCompatActivity {
     private BluetoothLeScanner mBluetoothLeScanner;
     private BleScanCallback mBleScanCallback;
 
+    private static final String UUID = "74278BDA-B644-4520-8F0C-720EAF059935";
+
     private ArrayList<iBeacon> mLeDevices = new ArrayList<iBeacon>();
     private TextView view;
 
@@ -270,7 +272,7 @@ public class BeaconActivity extends AppCompatActivity {
                         Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
 
                         iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-                        if(ibeacon != null && ibeacon.bluetoothAddress != null) {
+                        if(ibeacon != null && UUID.equalsIgnoreCase(ibeacon.proximityUuid)) {
                             final String msg = "UUID:" + ibeacon.proximityUuid + ",\nmajor:" + ibeacon.major + ",\nminor:" + ibeacon.minor + "\naddress:" + ibeacon.bluetoothAddress + "\nrssi:" +ibeacon.rssi + "\n";
                             runOnUiThread(new Runnable() {
                                 @Override
