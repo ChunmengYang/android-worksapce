@@ -2,6 +2,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ycm.demo">
 
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- BLE -->
+    <!-- 蓝牙管理 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- 蓝牙操作权限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- 在有些机型上需要获取位置信息才能扫描到蓝牙设备，此权限在api23+需要动态申请 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- 表示此app只支持拥有BLE的设备上运行 -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+
+    <!-- zxing -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,45 +46,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".BeaconActivity"></activity>
-
+        <activity android:name=".BeaconActivity" />
         <activity
             android:name="com.ycm.zxinglibrary.android.CaptureActivity"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustPan|stateHidden"
-            android:theme="@style/ZxingTheme">
+            android:theme="@style/ZxingTheme"
+            android:windowSoftInputMode="adjustPan|stateHidden">
             <intent-filter>
-                <action android:name="com.ycm.zxinglibrary.android.SCAN"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="com.ycm.zxinglibrary.android.SCAN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name=".PieChartActivity"></activity>
     </application>
 
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-
-    <!--BLE-->
-    <!--蓝牙管理-->
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <!--蓝牙操作权限-->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <!--在有些机型上需要获取位置信息才能扫描到蓝牙设备，此权限在api23+需要动态申请-->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!--表示此app只支持拥有BLE的设备上运行-->
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
-
-
-    <!--zxing-->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.FLASHLIGHT" />
-
-    <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

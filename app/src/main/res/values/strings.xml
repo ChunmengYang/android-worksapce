@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">demo</string>
-    <string name="main_home">Home</string>
+    <string name="main_pie_chart">Pie Chart</string>
     <string name="main_scan_qrcode">Scan QR code</string>
     <string name="main_scan_beacons">Scan Beacon</string>
 

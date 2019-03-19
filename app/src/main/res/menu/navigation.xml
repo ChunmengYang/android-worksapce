@@ -2,9 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_home_black_24dp"
-        android:title="@string/main_home" />
+        android:id="@+id/navigation_pie_chart"
+        android:icon="@drawable/ic_pie_chart_24dp"
+        android:title="@string/main_pie_chart" />
 
     <item
         android:id="@+id/navigation_qrcode"

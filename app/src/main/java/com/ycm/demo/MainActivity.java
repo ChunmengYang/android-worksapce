@@ -35,8 +35,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    mTextMessage.setText(R.string.main_home);
+                case R.id.navigation_pie_chart:
+                    mTextMessage.setText(R.string.main_pie_chart);
+                    Intent pieChartIntent = new Intent(MainActivity.this, PieChartActivity.class);
+                    startActivity(pieChartIntent);
                     return true;
                 case R.id.navigation_qrcode:
                     Intent qrIntent = new Intent(Intents.Scan.ACTION);
@@ -95,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.navigation_home:
+            case R.id.navigation_pie_chart:
                 ListPopupWindow mListPop = new ListPopupWindow(this);
                 List<MyMenu> lists = new ArrayList<MyMenu>();
                 lists.add(new MyMenu(R.drawable.ic_scan_qrcode_24dp, getResources().getString(R.string.main_scan_qrcode)));
