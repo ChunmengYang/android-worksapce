@@ -1,12 +1,14 @@
 package com.ycm.demo;
 
 import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +31,7 @@ import java.util.PriorityQueue;
 
 public class BeaconActivity extends AppCompatActivity {
     private static final String LCAT = "BeaconActivity";
+    private static final int REQUEST_CODE_BLUETOOTH_ON = 1;
 
     private static final int REQUEST_CODE_ACCESS_COARSE_LOCATION = 1;
     private BluetoothManager mBluetoothManager;
@@ -63,6 +66,7 @@ public class BeaconActivity extends AppCompatActivity {
                 //判断是否需要向用户解释为什么需要申请该权限
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
                     Toast.makeText(this, "需要打开位置权限才可以搜索到信标", Toast.LENGTH_LONG).show();
+                    finish();
                     return;
                 }
                 //请求权限
@@ -78,18 +82,15 @@ public class BeaconActivity extends AppCompatActivity {
             mBluetoothAdapter = mBluetoothManager.getAdapter();
             if (!mBluetoothAdapter.isEnabled()) {
 
-                boolean enable =  mBluetoothAdapter.enable();
-                if (enable) {
-                    Toast.makeText(this, "打开蓝牙功能成功！", Toast.LENGTH_LONG).show();
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    Toast.makeText(this, "打开蓝牙功能失败，请到'系统设置'中手动开启蓝牙功能！", Toast.LENGTH_LONG).show();
-                    return;
-                }
+                Intent requestBluetoothOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                this.startActivityForResult(requestBluetoothOn, REQUEST_CODE_BLUETOOTH_ON);
+                return;
+
+//                boolean enable =  mBluetoothAdapter.enable();
+//                if (!enable) {
+//                    Toast.makeText(this, "打开蓝牙功能失败，请到'系统设置'中手动开启蓝牙功能！", Toast.LENGTH_LONG).show();
+//                    return;
+//                }
             }
             mBleScanCallback = new BleScanCallback();
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
@@ -110,6 +111,29 @@ public class BeaconActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // requestCode 与请求开启 Bluetooth 传入的 requestCode 相对应
+        if (requestCode == REQUEST_CODE_BLUETOOTH_ON) {
+            switch (resultCode) {
+                // 点击确认按钮
+                case Activity.RESULT_OK:
+                    Log.d(LCAT, "用户选择开启 Bluetooth，Bluetooth 会被开启");
+                    initScanner();
+                    break;
+                // 点击取消按钮或点击返回键
+                case Activity.RESULT_CANCELED:
+                    Log.d(LCAT, "用户拒绝打开 Bluetooth, Bluetooth 不会被开启");
+                    Toast.makeText(this, "需要打开蓝牙才可以搜索到信标！", Toast.LENGTH_LONG).show();
+                    finish();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE_ACCESS_COARSE_LOCATION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -120,6 +144,7 @@ public class BeaconActivity extends AppCompatActivity {
                 //permission denied, boo! Disable the functionality that depends on this permission.
                 //这里进行权限被拒绝的处理
                 Toast.makeText(this, "需要打开位置权限才可以搜索到信标", Toast.LENGTH_LONG).show();
+                finish();
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);

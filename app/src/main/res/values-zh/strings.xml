@@ -2,6 +2,8 @@
     <string name="main_pie_chart">饼图报表</string>
     <string name="main_scan_qrcode">扫描二维码</string>
     <string name="main_scan_beacons">扫描信标</string>
+    <string name="main_scrolling">Scrolling</string>
+    <string name="main_list_popup">List Popup</string>
 
     <!--zxing-->
     <string name="app_name">demo</string>

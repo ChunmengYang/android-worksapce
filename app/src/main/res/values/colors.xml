@@ -4,6 +4,7 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
 
+    <color name="scrolling_background_color">#dedede</color>
 
     <!--zxing-->
     <color name="qrcode_contents_text">#000000</color>

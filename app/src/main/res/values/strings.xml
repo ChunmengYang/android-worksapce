@@ -3,6 +3,8 @@
     <string name="main_pie_chart">Pie Chart</string>
     <string name="main_scan_qrcode">Scan QR code</string>
     <string name="main_scan_beacons">Scan Beacon</string>
+    <string name="main_scrolling">Scrolling</string>
+    <string name="main_list_popup">List Popup</string>
 
     <!--zxing-->
     <string name="qrcode_scan">Scanner</string>
@@ -14,4 +16,5 @@
     <string name="qrcode_viewfinderview_status_text1">Put 2D code / bar code in the viewfinder.</string>
     <string name="qrcode_viewfinderview_status_text2">Automatic scanning</string>
     <string name="qrcode_parsing_failed">Sorry, parsing failed, try another picture.</string>
+
 </resources>

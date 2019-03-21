@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListPopupWindow;
@@ -89,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
-        getMenuInflater().inflate(R.menu.navigation, menu);
+        getMenuInflater().inflate(R.menu.main_options, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -97,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.navigation_pie_chart:
-                ListPopupWindow mListPop = new ListPopupWindow(this);
+            case R.id.main_options_list_popup:
+                final ListPopupWindow mListPop = new ListPopupWindow(this);
                 List<MyMenu> lists = new ArrayList<MyMenu>();
                 lists.add(new MyMenu(R.drawable.ic_scan_qrcode_24dp, getResources().getString(R.string.main_scan_qrcode)));
                 lists.add(new MyMenu(R.drawable.ic_scan_beacons_24dp, getResources().getString(R.string.main_scan_beacons)));
@@ -108,9 +109,20 @@ public class MainActivity extends AppCompatActivity {
                 mListPop.setHeight(ConstraintLayout.LayoutParams.WRAP_CONTENT);
                 mListPop.setAnchorView(mTextMessage);
                 mListPop.setModal(true);
+
+                mListPop.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view,
+                                            int position, long id) {
+                        mTextMessage.setText(String.valueOf(position));
+                        mListPop.dismiss();
+                    }
+                });
                 mListPop.show();
                 break;
-            case R.id.navigation_qrcode:
+            case R.id.main_options_scrolling:
+                Intent scrollingIntent = new Intent(MainActivity.this, ScrollingActivity.class);
+                startActivity(scrollingIntent);
                 break;
             default:
                 break;

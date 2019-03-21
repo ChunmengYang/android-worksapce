@@ -46,7 +46,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".BeaconActivity" />
         <activity
             android:name="com.ycm.zxinglibrary.android.CaptureActivity"
             android:configChanges="orientation|screenSize"
@@ -59,7 +58,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".PieChartActivity"></activity>
+        <activity android:name=".BeaconActivity"
+            android:label="@string/main_scan_beacons"/>
+        <activity android:name=".PieChartActivity"
+            android:label="@string/main_pie_chart"/>
+        <activity android:name=".ScrollingActivity"
+            android:label="@string/main_scrolling"/>
     </application>
 
 </manifest>
