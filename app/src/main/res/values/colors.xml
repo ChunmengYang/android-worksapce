@@ -4,7 +4,10 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
 
-    <color name="scrolling_background_color">#dedede</color>
+    <color name="scrolling_item_border_color">#dedede</color>
+    <color name="scrolling_footer_background_color">#ffffff</color>
+    <color name="scrolling_footer_border_color">#c1e9e9e9</color>
+
 
     <!--zxing-->
     <color name="qrcode_contents_text">#000000</color>

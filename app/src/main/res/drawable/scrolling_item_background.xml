@@ -4,7 +4,7 @@
         android:height="1dp"
         android:gravity="bottom">
         <shape>
-            <solid android:color="@color/scrolling_background_color" />
+            <solid android:color="@color/scrolling_item_border_color" />
         </shape>
     </item>
 </layer-list>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <color android:color="@color/scrolling_footer_background_color"></color>
+    </item>
+    <item
+        android:height="1dp"
+        android:gravity="top">
+        <shape>
+            <solid android:color="@color/scrolling_footer_border_color" />
+        </shape>
+    </item>
+</layer-list>

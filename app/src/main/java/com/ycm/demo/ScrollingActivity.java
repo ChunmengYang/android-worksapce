@@ -3,6 +3,7 @@ package com.ycm.demo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class ScrollingActivity extends AppCompatActivity {
     private LinearLayout container;
-
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +26,51 @@ public class ScrollingActivity extends AppCompatActivity {
 
         container = findViewById(R.id.scrolling_content);
 
+        swipeRefreshLayout = findViewById(R.id.scrolling_refresh);
+        swipeRefreshLayout.setSize(SwipeRefreshLayout.DEFAULT);
+        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+
+            @Override
+            public void onRefresh() {
+                refresh();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
+        swipeRefreshLayout.setRefreshing(true);
+        refresh();
+        swipeRefreshLayout.setRefreshing(false);
+    }
+
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void renderItem(Drawable icon, String title, String contet) {
+        LayoutInflater inflater = LayoutInflater.from(ScrollingActivity.this);
+        ConstraintLayout itemLayout = (ConstraintLayout)inflater.inflate(R.layout.scrolling_item, null);
+
+        ImageView iconView = itemLayout.findViewById(R.id.scrolling_item_icon);
+        iconView.setImageResource(R.drawable.ic_person_50dp);
+
+        TextView titleView = itemLayout.findViewById(R.id.scrolling_item_title);
+        titleView.setText(title);
+
+        TextView contentView = itemLayout.findViewById(R.id.scrolling_item_content);
+        contentView.setText(contet);
+        container.addView(itemLayout);
+    }
+
+    public void refresh() {
+        container.removeAllViews();
 
         List<String> titles = new ArrayList<String>();
         titles.add("簪中录");
@@ -49,29 +95,5 @@ public class ScrollingActivity extends AppCompatActivity {
         for (int i = 0; i < 5; i++) {
             renderItem(null, titles.get(i), contents.get(i));
         }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void renderItem(Drawable icon, String title, String contet) {
-        LayoutInflater inflater = LayoutInflater.from(ScrollingActivity.this);
-        ConstraintLayout itemLayout = (ConstraintLayout)inflater.inflate(R.layout.scrolling_item, null);
-
-        ImageView iconView = itemLayout.findViewById(R.id.scrolling_item_icon);
-        iconView.setImageResource(R.drawable.ic_person_50dp);
-
-        TextView titleView = itemLayout.findViewById(R.id.scrolling_item_title);
-        titleView.setText(title);
-
-        TextView contentView = itemLayout.findViewById(R.id.scrolling_item_content);
-        contentView.setText(contet);
-        container.addView(itemLayout);
     }
 }
