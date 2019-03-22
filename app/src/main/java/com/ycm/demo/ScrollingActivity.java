@@ -5,11 +5,13 @@ import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +43,13 @@ public class ScrollingActivity extends AppCompatActivity {
         swipeRefreshLayout.setRefreshing(true);
         refresh();
         swipeRefreshLayout.setRefreshing(false);
+
+        // 获取屏幕密度
+        DisplayMetrics dm = new DisplayMetrics();
+        dm = getResources().getDisplayMetrics();
+
+        float density  = dm.density;
+        Toast.makeText(this, String.valueOf(density), Toast.LENGTH_LONG).show();
     }
 
 
@@ -60,6 +69,7 @@ public class ScrollingActivity extends AppCompatActivity {
 
         ImageView iconView = itemLayout.findViewById(R.id.scrolling_item_icon);
         iconView.setImageResource(R.drawable.ic_person_50dp);
+
 
         TextView titleView = itemLayout.findViewById(R.id.scrolling_item_title);
         titleView.setText(title);

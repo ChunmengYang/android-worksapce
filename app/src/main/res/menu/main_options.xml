@@ -9,4 +9,9 @@
         android:id="@+id/main_options_list_popup"
         android:icon="@drawable/ic_list_24dp"
         android:title="@string/main_list_popup" />
+
+    <item
+        android:id="@+id/main_options_image_upload_and_download"
+        android:icon="@drawable/ic_image_24dp"
+        android:title="@string/main_image_upload_and_download" />
 </menu>

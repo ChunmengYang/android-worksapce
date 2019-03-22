@@ -4,7 +4,6 @@
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET" />
-
     <!-- BLE -->
     <!-- 蓝牙管理 -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -58,12 +57,26 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".BeaconActivity"
-            android:label="@string/main_scan_beacons"/>
-        <activity android:name=".PieChartActivity"
-            android:label="@string/main_pie_chart"/>
-        <activity android:name=".ScrollingActivity"
-            android:label="@string/main_scrolling"/>
+        <activity
+            android:name=".BeaconActivity"
+            android:label="@string/main_scan_beacons" />
+        <activity
+            android:name=".PieChartActivity"
+            android:label="@string/main_pie_chart" />
+        <activity
+            android:name=".ScrollingActivity"
+            android:label="@string/main_scrolling" />
+        <activity android:name=".ImageUploadAndDownLoadActivity"></activity>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.ycm.demo.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

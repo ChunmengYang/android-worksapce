@@ -1,12 +1,13 @@
 <resources>
+    <string name="app_name">demo</string>
     <string name="main_pie_chart">Pie Chart</string>
     <string name="main_scan_qrcode">Scan QR code</string>
     <string name="main_scan_beacons">Scan Beacon</string>
     <string name="main_scrolling">Scrolling</string>
     <string name="main_list_popup">List Popup</string>
+    <string name="main_image_upload_and_download">Image Upload And Download</string>
 
     <!--zxing-->
-    <string name="app_name">demo</string>
     <string name="qrcode_scan">Scanner</string>
     <string name="qrcode_open_flashlight">Flash on</string>
     <string name="qrcode_close_flashlight">Flash off</string>

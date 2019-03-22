@@ -124,6 +124,10 @@ public class MainActivity extends AppCompatActivity {
                 Intent scrollingIntent = new Intent(MainActivity.this, ScrollingActivity.class);
                 startActivity(scrollingIntent);
                 break;
+            case R.id.main_options_image_upload_and_download:
+                Intent imageIntent = new Intent(MainActivity.this, ImageUploadAndDownLoadActivity.class);
+                startActivity(imageIntent);
+                break;
             default:
                 break;
         }
