@@ -3,7 +3,13 @@ package com.ycm.demo;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
@@ -25,9 +31,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ycm.demo.beacon.iBeacon;
-import com.ycm.demo.beacon.iBeaconUtils;
-
 import java.lang.ref.WeakReference;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,18 +38,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-public class BeaconActivity extends AppCompatActivity {
-    private static final String LCAT = "BeaconActivity";
+public class BLEActivity extends AppCompatActivity {
+
+    private static final String LCAT = "BLEActivity";
     private static final int REQUEST_CODE_BLUETOOTH_ON = 1;
     private static final int REQUEST_CODE_ACCESS_COARSE_LOCATION = 1;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
-    private BleScanCallback mBleScanCallback;
+    private BLEActivity.BleScanCallback mBleScanCallback;
 
     // 解析线程，解析Beacon数据
-    private FromScanDataThread mFromScanDataThread;
+    private BLEActivity.FromScanDataThread mFromScanDataThread;
     // 扫描结果队列，解析线程从中拿数据
     private static java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
         @Override
@@ -59,8 +63,8 @@ public class BeaconActivity extends AppCompatActivity {
         }
     });
 
-    // Beacon的View，Key为Beacon的address
-    private Map<String, BeaconView> beaconViews = new HashMap<String, BeaconView>();
+    // BLE的View，Key为Beacon的address
+    private Map<String, BLEView> bleViews = new HashMap<String, BLEView>();
 
     private TextView msgView;
     private LinearLayout containerView;
@@ -68,11 +72,11 @@ public class BeaconActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_beacon);
+        setContentView(R.layout.activity_ble);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        msgView = findViewById(R.id.beacon_msg);
-        containerView = findViewById(R.id.beacon_devices);
+        msgView = findViewById(R.id.ble_msg);
+        containerView = findViewById(R.id.ble_devices);
     }
 
     private void initScanner() {
@@ -106,17 +110,11 @@ public class BeaconActivity extends AppCompatActivity {
                 Intent requestBluetoothOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 this.startActivityForResult(requestBluetoothOn, REQUEST_CODE_BLUETOOTH_ON);
                 return;
-
-//                boolean enable =  mBluetoothAdapter.enable();
-//                if (!enable) {
-//                    Toast.makeText(this, "打开蓝牙功能失败，请到'系统设置'中手动开启蓝牙功能！", Toast.LENGTH_LONG).show();
-//                    return;
-//                }
             }
-            mBleScanCallback = new BleScanCallback();
+            mBleScanCallback = new BLEActivity.BleScanCallback();
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
-            mFromScanDataThread = new FromScanDataThread(BeaconActivity.this);
+            mFromScanDataThread = new BLEActivity.FromScanDataThread(BLEActivity.this);
         }
 
         if (mFromScanDataThread != null) {
@@ -214,8 +212,8 @@ public class BeaconActivity extends AppCompatActivity {
 
         queue.clear();
 
-        beaconViews.clear();
-        beaconViews = null;
+        bleViews.clear();
+        bleViews = null;
 
         super.onDestroy();
     }
@@ -229,16 +227,24 @@ public class BeaconActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void renderItem(String address, String uuid, String majorAndMinor) {
-        if (beaconViews.containsKey(address)) {
-            BeaconView beaconView = beaconViews.get(address);
-            beaconView.setUUID(uuid);
-            beaconView.setMajorAndMinor(majorAndMinor);
-        } else  {
-            BeaconView beaconView = new BeaconView(BeaconActivity.this, address, uuid, majorAndMinor);
-            beaconViews.put(address, beaconView);
-            containerView.addView(beaconView.getView());
+    private void renderItem(BluetoothDevice device, int rssi) {
+        if (!bleViews.containsKey(device.getAddress())) {
+            BLEView bleView = new BLEView(BLEActivity.this, device, rssi);
+            bleViews.put(device.getAddress(), bleView);
+            containerView.addView(bleView.getView());
         }
+
+//        if (bleViews.size() > 10) {
+//            if (mBluetoothLeScanner != null) {
+//                mBluetoothLeScanner.stopScan(mBleScanCallback);
+//                Log.d(LCAT, "======Stop Scanning======");
+//            }
+//
+//            if (mFromScanDataThread != null) {
+//                mFromScanDataThread.setRunStatus(false);
+//                Log.d(LCAT, "======Stop FromScanDataThread======");
+//            }
+//        }
     }
 
     /**
@@ -269,10 +275,10 @@ public class BeaconActivity extends AppCompatActivity {
     }
 
     private static class FromScanDataThread extends Thread {
-        WeakReference<BeaconActivity> weakReference;
+        WeakReference<BLEActivity> weakReference;
 
-        FromScanDataThread(BeaconActivity activity) {
-            weakReference = new WeakReference<BeaconActivity>(activity);
+        FromScanDataThread(BLEActivity activity) {
+            weakReference = new WeakReference<BLEActivity>(activity);
         }
         private boolean runStatus = true;
 
@@ -299,23 +305,17 @@ public class BeaconActivity extends AppCompatActivity {
 
                     if(queue.size() != 0) {
                         ScanResult result = queue.poll();
-
                         Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
 
-                        iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-                        if(ibeacon != null && ibeacon.bluetoothAddress != null) {
-
-                            final String address = ibeacon.bluetoothAddress;
-                            final String uuid = ibeacon.proximityUuid;
-                            final String majorAndMinor = "major:" + ibeacon.major + ", minor:" + ibeacon.minor + ", rssi:" + ibeacon.rssi;
+                        if(result != null && result.getDevice().getAddress() != null) {
+                            final BluetoothDevice device = result.getDevice();
+                            final int rssi = result.getRssi();
 
                             if (weakReference.get() != null) {
                                 weakReference.get().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + uuid +"\n"+ majorAndMinor);
-
-                                        weakReference.get().renderItem(address, uuid, majorAndMinor);
+                                        weakReference.get().renderItem(device, rssi);
                                     }
                                 });
                             }
@@ -332,41 +332,88 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
-    private static class BeaconView {
+    private static class BLEView implements View.OnClickListener {
         ConstraintLayout itemLayout;
+        TextView nameView;
         TextView addressView;
-        TextView uuidView;
-        TextView majAndMinView;
+        TextView rssiView;
 
-        public BeaconView(Context context, String address, String uuid, String majorAndMinor) {
+        BluetoothDevice device;
+        BluetoothGatt gatt;
+
+        public BLEView(Context context, BluetoothDevice device, int rssi) {
+            this.device = device;
+
             LayoutInflater inflater = LayoutInflater.from(context);
-            itemLayout = (ConstraintLayout)inflater.inflate(R.layout.beacon_item, null);
+            itemLayout = (ConstraintLayout)inflater.inflate(R.layout.ble_item, null);
 
-            addressView = itemLayout.findViewById(R.id.beacon_item_address);
-            addressView.setText(address);
+            nameView = itemLayout.findViewById(R.id.ble_item_name);
+            nameView.setText(device.getName());
+
+            addressView = itemLayout.findViewById(R.id.ble_item_address);
+            addressView.setText(device.getAddress());
 
 
-            uuidView = itemLayout.findViewById(R.id.beacon_item_UUID);
-            uuidView.setText(uuid);
+            rssiView = itemLayout.findViewById(R.id.ble_item_rssi);
+            rssiView.setText(String.valueOf(rssi));
 
-            majAndMinView = itemLayout.findViewById(R.id.beacon_item_major_and_minor);
-            majAndMinView.setText(majorAndMinor);
+            itemLayout.setOnClickListener(this);
         }
 
-        public void setUUID(String uuid) {
-            if (uuidView != null) {
-                uuidView.setText(uuid);
-            }
-        }
-
-        public void setMajorAndMinor(String majorAndMinor) {
-            if (majAndMinView != null) {
-                majAndMinView.setText(majorAndMinor);
-            }
+        public void setRSSI(int rssi) {
+            rssiView.setText(rssi);
         }
 
         public View getView() {
             return itemLayout;
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (gatt != null) {
+                gatt.disconnect();
+                gatt = null;
+                return;
+            }
+            gatt = device.connectGatt(v.getContext(), true, new BluetoothGattCallback() {
+
+                @Override
+                public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                    super.onConnectionStateChange(gatt, status, newState);
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        Log.d(LCAT, "======BLE Connected======" + gatt.getDevice().getAddress());
+                        gatt.discoverServices();
+                    }
+                }
+
+                @Override
+                public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                    super.onServicesDiscovered(gatt, status);
+
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        List<BluetoothGattService> supportedGattServices = gatt.getServices();
+                        for(int i = 0; i < supportedGattServices.size(); i++){
+                            Log.d(LCAT, "======BLE Service Discovered======" + supportedGattServices.get(i).getUuid());
+//                            List<BluetoothGattCharacteristic> listGattCharacteristic = supportedGattServices.get(i).getCharacteristics();
+                        }
+                    }
+                }
+
+                @Override
+                public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                    super.onCharacteristicRead(gatt, characteristic, status);
+                }
+
+                @Override
+                public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                    super.onCharacteristicWrite(gatt, characteristic, status);
+                }
+
+                @Override
+                public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                    super.onCharacteristicChanged(gatt, characteristic);
+                }
+            });
         }
     }
 }
