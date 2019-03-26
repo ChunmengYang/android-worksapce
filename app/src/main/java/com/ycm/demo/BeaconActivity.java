@@ -13,20 +13,25 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ycm.demo.beacon.iBeacon;
 import com.ycm.demo.beacon.iBeaconUtils;
 
-import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 
 public class BeaconActivity extends AppCompatActivity {
@@ -39,10 +44,25 @@ public class BeaconActivity extends AppCompatActivity {
     private BluetoothLeScanner mBluetoothLeScanner;
     private BleScanCallback mBleScanCallback;
 
-    private static final String UUID = "74278BDA-B644-4520-8F0C-720EAF059935";
+    // 解析线程，解析Beacon数据
+    private FromScanDataThread mFromScanDataThread;
+    // 扫描结果队列，解析线程从中拿数据
+    private java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
+        @Override
+        public int compare(ScanResult o1, ScanResult o2) {
+            if(o1.getRssi() <= o2.getRssi()){
+                return 1;
+            }
+            else
+                return -1;
+        }
+    });
 
-    private ArrayList<iBeacon> mLeDevices = new ArrayList<iBeacon>();
-    private TextView view;
+    // Beacon的View，Key为Beacon的address
+    private Map<String, BeaconView> beaconViews = new HashMap<String, BeaconView>();
+
+    private TextView msgView;
+    private LinearLayout beaconsView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,13 +70,13 @@ public class BeaconActivity extends AppCompatActivity {
         setContentView(R.layout.activity_beacon);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        view = findViewById(R.id.beacons);
-        view.setText("Beacon Scanner");
+        msgView = findViewById(R.id.beacon_msg);
+        beaconsView = findViewById(R.id.beacon_devices);
     }
 
     private void initScanner() {
         Log.d(LCAT, "Initializing Scanner");
-        view.setText("Initializing Scanner");
+        msgView.setText("Initializing Scanner");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             //判断是否具有权限
@@ -107,7 +127,7 @@ public class BeaconActivity extends AppCompatActivity {
         }
 
         Log.d(LCAT, "Scanning");
-        view.setText("Scanning");
+        msgView.setText("Scanning");
     }
 
     @Override
@@ -175,13 +195,10 @@ public class BeaconActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        queue.clear();
+        beaconViews.clear();
 
-        mBluetoothManager = null;
-        mBluetoothAdapter = null;
-        mBluetoothLeScanner = null;
-        mBleScanCallback = null;
-        mFromScanDataThread = null;
+        super.onDestroy();
     }
 
     @Override
@@ -207,31 +224,6 @@ public class BeaconActivity extends AppCompatActivity {
                 queue.offer(result);
                 queue.notify();
             }
-
-
-//            iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-//            if(ibeacon == null) return;
-//
-//            addDevice(ibeacon);
-//            Collections.sort(mLeDevices, new Comparator<iBeacon>() {
-//                @Override
-//                public int compare(iBeacon h1, iBeacon h2) {
-//                    return h2.rssi - h1.rssi;
-//                }
-//            });
-//
-//            String msg = "";
-//            for (iBeacon item : mLeDevices) {
-//                msg += "UUID:" + item.proximityUuid + ",\nmajor:" + item.major + ",\nminor:" + item.minor + "\naddress:" + item.bluetoothAddress + "\n";
-//            }
-//
-//            final String text = msg;
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    view.setText(text);
-//                }
-//            });
         }
 
         @Override
@@ -244,41 +236,6 @@ public class BeaconActivity extends AppCompatActivity {
             super.onScanFailed(errorCode);
         }
     }
-
-    private void addDevice(iBeacon device) {
-        if (device == null) {
-            Log.d(LCAT, "device==null ");
-            return;
-        }
-        if (device.bluetoothAddress == null) {
-            Log.d(LCAT, "device.bluetoothAddress==null ");
-            return;
-        }
-
-        Log.d(LCAT, "UUID:" + device.proximityUuid + ",major:" + device.major + ",minor:" + device.minor + "address:" + device.bluetoothAddress + "\n");
-
-        for (int i = 0; i < mLeDevices.size(); i++) {
-            String btAddress = mLeDevices.get(i).bluetoothAddress;
-            if (btAddress.equals(device.bluetoothAddress)) {
-                mLeDevices.add(i + 1, device);
-                mLeDevices.remove(i);
-                return;
-            }
-        }
-        mLeDevices.add(device);
-    }
-
-    private FromScanDataThread mFromScanDataThread;
-    private java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
-        @Override
-        public int compare(ScanResult o1, ScanResult o2) {
-            if(o1.getRssi() <= o2.getRssi()){
-                return 1;
-            }
-            else
-                return -1;
-        }
-    });
 
     private class FromScanDataThread extends Thread {
         private boolean runStatus = true;
@@ -305,17 +262,22 @@ public class BeaconActivity extends AppCompatActivity {
 
                     if(queue.size() != 0) {
                         ScanResult result = queue.poll();
+
                         Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
 
                         iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-                        if(ibeacon != null && UUID.equalsIgnoreCase(ibeacon.proximityUuid)) {
-                            final String msg = "UUID:" + ibeacon.proximityUuid + ",\nmajor:" + ibeacon.major + ",\nminor:" + ibeacon.minor + "\naddress:" + ibeacon.bluetoothAddress + "\nrssi:" +ibeacon.rssi + "\n";
+                        if(ibeacon != null && ibeacon.bluetoothAddress != null) {
+
+                            final String address = ibeacon.bluetoothAddress;
+                            final String uuid = ibeacon.proximityUuid;
+                            final String majorAndMinor = "major:" + ibeacon.major + ", minor:" + ibeacon.minor + ", rssi:" + ibeacon.rssi;
+
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + msg);
+                                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + uuid +"\n"+ majorAndMinor);
 
-                                    view.setText(msg);
+                                    renderItem(address, uuid, majorAndMinor);
                                 }
                             });
                         }
@@ -329,4 +291,55 @@ public class BeaconActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void renderItem(String address, String uuid, String majorAndMinor) {
+        if (beaconViews.containsKey(address)) {
+            BeaconView beaconView = beaconViews.get(address);
+            beaconView.setUUID(uuid);
+            beaconView.setMajorAndMinor(majorAndMinor);
+        } else  {
+            BeaconView beaconView = new BeaconView(address, uuid, majorAndMinor);
+            beaconViews.put(address, beaconView);
+            beaconsView.addView(beaconView.getView());
+        }
+    }
+
+    private class BeaconView {
+        ConstraintLayout itemLayout;
+        TextView addressView;
+        TextView uuidView;
+        TextView majAndMinView;
+
+        public BeaconView(String address, String uuid, String majorAndMinor) {
+            LayoutInflater inflater = LayoutInflater.from(BeaconActivity.this);
+            itemLayout = (ConstraintLayout)inflater.inflate(R.layout.beacon_item, null);
+
+            addressView = itemLayout.findViewById(R.id.beacon_item_address);
+            addressView.setText(address);
+
+
+            uuidView = itemLayout.findViewById(R.id.beacon_item_UUID);
+            uuidView.setText(uuid);
+
+            majAndMinView = itemLayout.findViewById(R.id.beacon_item_major_and_minor);
+            majAndMinView.setText(majorAndMinor);
+        }
+
+        public void setUUID(String uuid) {
+            if (uuidView != null) {
+                uuidView.setText(uuid);
+            }
+        }
+
+        public void setMajorAndMinor(String majorAndMinor) {
+            if (majAndMinView != null) {
+                majAndMinView.setText(majorAndMinor);
+            }
+        }
+
+        public View getView() {
+            return itemLayout;
+        }
+    }
+
 }
