@@ -201,13 +201,15 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
         } else if (requestCode == PHOTO_REQUEST_CAREMA) {
             // 从相机返回的数据
             if (hasSdcard()) {
-                Uri uri;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    uri = FileProvider.getUriForFile(this, this.getPackageName() + ".fileprovider", tempFile);
-                } else {
-                    uri = Uri.fromFile(tempFile);
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    Uri uri;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        uri = FileProvider.getUriForFile(this, this.getPackageName() + ".fileprovider", tempFile);
+                    } else {
+                        uri = Uri.fromFile(tempFile);
+                    }
+                    crop(uri);
                 }
-                crop(uri);
             } else {
                 Toast.makeText(this, "未找到存储卡，无法存储照片！", Toast.LENGTH_SHORT).show();
             }
