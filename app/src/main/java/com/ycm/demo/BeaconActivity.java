@@ -28,6 +28,7 @@ import android.widget.Toast;
 import com.ycm.demo.beacon.iBeacon;
 import com.ycm.demo.beacon.iBeaconUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,7 @@ public class BeaconActivity extends AppCompatActivity {
     // 解析线程，解析Beacon数据
     private FromScanDataThread mFromScanDataThread;
     // 扫描结果队列，解析线程从中拿数据
-    private java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
+    private static java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
         @Override
         public int compare(ScanResult o1, ScanResult o2) {
             if(o1.getRssi() <= o2.getRssi()){
@@ -62,7 +63,7 @@ public class BeaconActivity extends AppCompatActivity {
     private Map<String, BeaconView> beaconViews = new HashMap<String, BeaconView>();
 
     private TextView msgView;
-    private LinearLayout beaconsView;
+    private LinearLayout containerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +72,7 @@ public class BeaconActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         msgView = findViewById(R.id.beacon_msg);
-        beaconsView = findViewById(R.id.beacon_devices);
+        containerView = findViewById(R.id.beacon_devices);
     }
 
     private void initScanner() {
@@ -115,7 +116,7 @@ public class BeaconActivity extends AppCompatActivity {
             mBleScanCallback = new BleScanCallback();
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
-            mFromScanDataThread = new FromScanDataThread();
+            mFromScanDataThread = new FromScanDataThread(BeaconActivity.this);
         }
 
         if (mFromScanDataThread != null) {
@@ -195,8 +196,20 @@ public class BeaconActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        mBluetoothManager = null;
+        mBluetoothAdapter = null;
+        mBluetoothLeScanner = null;
+        mBleScanCallback = null;
+        mFromScanDataThread = null;
+
+        msgView = null;
+        containerView.removeAllViews();
+        containerView = null;
+
         queue.clear();
+
         beaconViews.clear();
+        beaconViews = null;
 
         super.onDestroy();
     }
@@ -210,10 +223,22 @@ public class BeaconActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void renderItem(String address, String uuid, String majorAndMinor) {
+        if (beaconViews.containsKey(address)) {
+            BeaconView beaconView = beaconViews.get(address);
+            beaconView.setUUID(uuid);
+            beaconView.setMajorAndMinor(majorAndMinor);
+        } else  {
+            BeaconView beaconView = new BeaconView(BeaconActivity.this, address, uuid, majorAndMinor);
+            beaconViews.put(address, beaconView);
+            containerView.addView(beaconView.getView());
+        }
+    }
+
     /**
      * api21+低功耗蓝牙接口回调，以下回调的方法可以根据需求去做相应的操作
      */
-    private class BleScanCallback extends ScanCallback {
+    private static class BleScanCallback extends ScanCallback {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
@@ -237,8 +262,14 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
-    private class FromScanDataThread extends Thread {
+    private static class FromScanDataThread extends Thread {
+        WeakReference<BeaconActivity> weakReference;
+
+        FromScanDataThread(BeaconActivity activity) {
+            weakReference = new WeakReference<BeaconActivity>(activity);
+        }
         private boolean runStatus = true;
+
         public void  setRunStatus(boolean status) {
             this.runStatus = status;
             synchronized (queue) {
@@ -272,14 +303,17 @@ public class BeaconActivity extends AppCompatActivity {
                             final String uuid = ibeacon.proximityUuid;
                             final String majorAndMinor = "major:" + ibeacon.major + ", minor:" + ibeacon.minor + ", rssi:" + ibeacon.rssi;
 
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + uuid +"\n"+ majorAndMinor);
+                            if (weakReference.get() != null) {
+                                weakReference.get().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + uuid +"\n"+ majorAndMinor);
 
-                                    renderItem(address, uuid, majorAndMinor);
-                                }
-                            });
+                                        weakReference.get().renderItem(address, uuid, majorAndMinor);
+                                    }
+                                });
+                            }
+
                         }
                     }
                 }
@@ -292,26 +326,14 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
-    private void renderItem(String address, String uuid, String majorAndMinor) {
-        if (beaconViews.containsKey(address)) {
-            BeaconView beaconView = beaconViews.get(address);
-            beaconView.setUUID(uuid);
-            beaconView.setMajorAndMinor(majorAndMinor);
-        } else  {
-            BeaconView beaconView = new BeaconView(address, uuid, majorAndMinor);
-            beaconViews.put(address, beaconView);
-            beaconsView.addView(beaconView.getView());
-        }
-    }
-
-    private class BeaconView {
+    private static class BeaconView {
         ConstraintLayout itemLayout;
         TextView addressView;
         TextView uuidView;
         TextView majAndMinView;
 
-        public BeaconView(String address, String uuid, String majorAndMinor) {
-            LayoutInflater inflater = LayoutInflater.from(BeaconActivity.this);
+        public BeaconView(Context context, String address, String uuid, String majorAndMinor) {
+            LayoutInflater inflater = LayoutInflater.from(context);
             itemLayout = (ConstraintLayout)inflater.inflate(R.layout.beacon_item, null);
 
             addressView = itemLayout.findViewById(R.id.beacon_item_address);
@@ -341,5 +363,4 @@ public class BeaconActivity extends AppCompatActivity {
             return itemLayout;
         }
     }
-
 }
