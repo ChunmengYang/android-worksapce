@@ -18,6 +18,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
@@ -27,16 +28,17 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.UUID;
 
 public class BLEActivity extends AppCompatActivity {
 
@@ -62,9 +64,16 @@ public class BLEActivity extends AppCompatActivity {
                 return -1;
         }
     });
+    // 定时器，10秒后关闭扫描
+    private CountDownTimer mTimer;
 
-    // BLE的View，Key为Beacon的address
-    private Map<String, BLEView> bleViews = new HashMap<String, BLEView>();
+    private static String BLE_NAME = "Blank";
+    private static String BLE_SERVICE_UUID = "B77A9A19-C4C2-4D36-84F4-F2584C97DE1F";
+    private static String BLE_READ_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
+    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
+    private BluetoothDevice mBluetoothDevice;
+    private BluetoothGatt mBluetoothGatt;
+    private Boolean isConnected = false;
 
     private TextView msgView;
     private LinearLayout containerView;
@@ -77,6 +86,56 @@ public class BLEActivity extends AppCompatActivity {
 
         msgView = findViewById(R.id.ble_msg);
         containerView = findViewById(R.id.ble_devices);
+
+        Button readBtn = findViewById(R.id.ble_read_button);
+        readBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(LCAT, "======Read Button Click======");
+                if (mBluetoothGatt != null && isConnected) {
+                    BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(BLE_SERVICE_UUID));
+                    if (service != null) {
+                        Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
+                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_READ_CHARACTERISTIC_UUID));
+
+                        if (characteristic == null) return;
+
+                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                            Log.d(LCAT, "======BLE Read Characteristic Discovered======" + characteristic.getUuid());
+
+                            mBluetoothGatt.readCharacteristic(characteristic);
+                        }
+                    }
+                }
+            }
+        });
+
+        Button writeBtn = findViewById(R.id.ble_write_button);
+        final EditText writeText = findViewById(R.id.ble_write_msg);
+        writeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(LCAT, "======Write Button Click======");
+                if (mBluetoothGatt != null && isConnected) {
+                    BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(BLE_SERVICE_UUID));
+                    if (service != null) {
+                        Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
+                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_CHARACTERISTIC_UUID));
+
+                        if (characteristic == null) return;
+
+                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
+                            Log.d(LCAT, "======BLE Write Characteristic Discovered======" + characteristic.getUuid());
+
+                            Log.d(LCAT, "======BLE Write Characteristic Value======" + writeText.getText().toString());
+                            characteristic.setValue(getHexBytes(writeText.getText().toString()));
+                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                            mBluetoothGatt.writeCharacteristic(characteristic);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private void initScanner() {
@@ -117,16 +176,43 @@ public class BLEActivity extends AppCompatActivity {
             mFromScanDataThread = new BLEActivity.FromScanDataThread(BLEActivity.this);
         }
 
+
+        // 启动数据解析线程
         if (mFromScanDataThread != null) {
             queue.clear();
             mFromScanDataThread.start();
         }
+        // 启动扫描
         if (mBluetoothLeScanner != null) {
             mBluetoothLeScanner.startScan(mBleScanCallback);
         }
 
-        Log.d(LCAT, "Scanning");
+        Log.d(LCAT, "======Start Scanning======");
         msgView.setText("Scanning");
+
+        // 定时器，10秒后结束扫描
+        mTimer = new CountDownTimer((long)15 * 1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                //每秒TODO
+            }
+
+            @Override
+            public void onFinish() {
+                if (mBluetoothLeScanner != null) {
+                    mBluetoothLeScanner.stopScan(mBleScanCallback);
+                    Log.d(LCAT, "======Stop Scanning======");
+                }
+
+                if (mFromScanDataThread != null) {
+                    mFromScanDataThread.setRunStatus(false);
+                    Log.d(LCAT, "======Stop FromScanDataThread======");
+                }
+
+                msgView.setText("Scan completed");
+            }
+        };
+        mTimer.start();
     }
 
     @Override
@@ -190,30 +276,31 @@ public class BLEActivity extends AppCompatActivity {
             mFromScanDataThread.setRunStatus(false);
             Log.d(LCAT, "======Stop FromScanDataThread======");
         }
+        mTimer.cancel();
     }
 
     @Override
     protected void onDestroy() {
-        mBluetoothManager = null;
+        if (mBluetoothGatt != null) {
+            mBluetoothGatt.disconnect();
+        }
+        mBluetoothGatt = null;
+        mBluetoothDevice = null;
 
+        mBluetoothManager = null;
         if (mBluetoothAdapter!= null && mBluetoothAdapter.isEnabled()) {
             mBluetoothAdapter.disable();
         }
         mBluetoothAdapter = null;
-
         mBluetoothLeScanner = null;
         mBleScanCallback = null;
-
         mFromScanDataThread = null;
+        mTimer = null;
+        queue.clear();
 
         msgView = null;
         containerView.removeAllViews();
         containerView = null;
-
-        queue.clear();
-
-        bleViews.clear();
-        bleViews = null;
 
         super.onDestroy();
     }
@@ -227,26 +314,6 @@ public class BLEActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void renderItem(BluetoothDevice device, int rssi) {
-        if (!bleViews.containsKey(device.getAddress())) {
-            BLEView bleView = new BLEView(BLEActivity.this, device, rssi);
-            bleViews.put(device.getAddress(), bleView);
-            containerView.addView(bleView.getView());
-        }
-
-//        if (bleViews.size() > 10) {
-//            if (mBluetoothLeScanner != null) {
-//                mBluetoothLeScanner.stopScan(mBleScanCallback);
-//                Log.d(LCAT, "======Stop Scanning======");
-//            }
-//
-//            if (mFromScanDataThread != null) {
-//                mFromScanDataThread.setRunStatus(false);
-//                Log.d(LCAT, "======Stop FromScanDataThread======");
-//            }
-//        }
-    }
-
     /**
      * api21+低功耗蓝牙接口回调，以下回调的方法可以根据需求去做相应的操作
      */
@@ -256,7 +323,7 @@ public class BLEActivity extends AppCompatActivity {
             super.onScanResult(callbackType, result);
             if (result == null) return;
 
-            Log.d(LCAT, Thread.currentThread().getId() + "======BleScanCallback======:" + result.getDevice().getAddress());
+            Log.d(LCAT, Thread.currentThread().getId() + "======BleScanCallback======:" + result.getDevice().getName());
             synchronized (queue) {
                 queue.offer(result);
                 queue.notify();
@@ -305,9 +372,10 @@ public class BLEActivity extends AppCompatActivity {
 
                     if(queue.size() != 0) {
                         ScanResult result = queue.poll();
-                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
 
-                        if(result != null && result.getDevice().getAddress() != null) {
+                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getName());
+
+                        if(result != null && BLE_NAME.equals(result.getDevice().getName())) {
                             final BluetoothDevice device = result.getDevice();
                             final int rssi = result.getRssi();
 
@@ -315,7 +383,7 @@ public class BLEActivity extends AppCompatActivity {
                                 weakReference.get().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        weakReference.get().renderItem(device, rssi);
+                                        weakReference.get().setupBluetoothDevice(device, rssi);
                                     }
                                 });
                             }
@@ -332,88 +400,152 @@ public class BLEActivity extends AppCompatActivity {
         }
     }
 
-    private static class BLEView implements View.OnClickListener {
-        ConstraintLayout itemLayout;
-        TextView nameView;
-        TextView addressView;
-        TextView rssiView;
-
-        BluetoothDevice device;
-        BluetoothGatt gatt;
-
-        public BLEView(Context context, BluetoothDevice device, int rssi) {
-            this.device = device;
-
-            LayoutInflater inflater = LayoutInflater.from(context);
-            itemLayout = (ConstraintLayout)inflater.inflate(R.layout.ble_item, null);
-
-            nameView = itemLayout.findViewById(R.id.ble_item_name);
-            nameView.setText(device.getName());
-
-            addressView = itemLayout.findViewById(R.id.ble_item_address);
-            addressView.setText(device.getAddress());
-
-
-            rssiView = itemLayout.findViewById(R.id.ble_item_rssi);
-            rssiView.setText(String.valueOf(rssi));
-
-            itemLayout.setOnClickListener(this);
+    private void setupBluetoothDevice(final BluetoothDevice device, int rssi) {
+        if (mBluetoothGatt != null) {
+            return;
         }
 
-        public void setRSSI(int rssi) {
-            rssiView.setText(rssi);
+        if (mBluetoothLeScanner != null) {
+            mBluetoothLeScanner.stopScan(mBleScanCallback);
+            Log.d(LCAT, "======Stop Scanning======");
         }
 
-        public View getView() {
-            return itemLayout;
+        if (mFromScanDataThread != null) {
+            mFromScanDataThread.setRunStatus(false);
+            Log.d(LCAT, "======Stop FromScanDataThread======");
+        }
+        mTimer.cancel();
+        msgView.setText("Scan completed");
+
+        LayoutInflater inflater = LayoutInflater.from(BLEActivity.this);
+        ConstraintLayout layout = (ConstraintLayout)inflater.inflate(R.layout.ble_item, null);
+
+        TextView nameView = layout.findViewById(R.id.ble_item_name);
+        String name = device.getName();
+        if (name == null || "".equals(name)) {
+            name = "Unnamed";
+        }
+        nameView.setText(name);
+
+        TextView addressView = layout.findViewById(R.id.ble_item_address);
+        addressView.setText(device.getAddress());
+
+        TextView rssiView = layout.findViewById(R.id.ble_item_rssi);
+        rssiView.setText(String.valueOf(rssi));
+
+        containerView.addView(layout, 0);
+
+        mBluetoothDevice = device;
+        mBluetoothGatt = mBluetoothDevice.connectGatt(BLEActivity.this, false, new MyBluetoothGattCallback(BLEActivity.this));
+        if (mBluetoothGatt.connect()) {
+            Log.d(LCAT, "======mBluetoothGatt Connected======");
+        }
+    }
+
+    private static class MyBluetoothGattCallback extends BluetoothGattCallback {
+        WeakReference<BLEActivity> weakReference;
+
+        public MyBluetoothGattCallback(BLEActivity activity) {
+            weakReference = new WeakReference<BLEActivity>(activity);
+        }
+
+
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d(LCAT, "======BLE Connected======" + gatt.getDevice().getName());
+
+                if (weakReference.get() != null) {
+                    weakReference.get().isConnected = true;
+                }
+                gatt.discoverServices();
+                return;
+            }
+
+            Log.d(LCAT, "======BLE Disconnected======" + gatt.getDevice().getName());
+            if (weakReference.get() != null) {
+                weakReference.get().isConnected = false;
+            }
+            gatt.connect();
         }
 
         @Override
-        public void onClick(View v) {
-            if (gatt != null) {
-                gatt.disconnect();
-                gatt = null;
-                return;
-            }
-            gatt = device.connectGatt(v.getContext(), true, new BluetoothGattCallback() {
-
-                @Override
-                public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                    super.onConnectionStateChange(gatt, status, newState);
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Log.d(LCAT, "======BLE Connected======" + gatt.getDevice().getAddress());
-                        gatt.discoverServices();
-                    }
-                }
-
-                @Override
-                public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                    super.onServicesDiscovered(gatt, status);
-
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        List<BluetoothGattService> supportedGattServices = gatt.getServices();
-                        for(int i = 0; i < supportedGattServices.size(); i++){
-                            Log.d(LCAT, "======BLE Service Discovered======" + supportedGattServices.get(i).getUuid());
-//                            List<BluetoothGattCharacteristic> listGattCharacteristic = supportedGattServices.get(i).getCharacteristics();
-                        }
-                    }
-                }
-
-                @Override
-                public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                    super.onCharacteristicRead(gatt, characteristic, status);
-                }
-
-                @Override
-                public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                    super.onCharacteristicWrite(gatt, characteristic, status);
-                }
-
-                @Override
-                public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-                    super.onCharacteristicChanged(gatt, characteristic);
-                }
-            });
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            super.onServicesDiscovered(gatt, status);
         }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicRead(gatt, characteristic, status);
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                String value = bytesToHexString(characteristic.getValue());
+
+                Log.d(LCAT, "======On Characteristic Read======UUID: " + characteristic.getUuid() + ", Value: " + value);
+
+                if (weakReference.get() != null) {
+                    TextView readText = weakReference.get().findViewById(R.id.ble_read_msg);
+
+                    readText.setText(value);
+                }
+            }
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            //只有setType是writeWithResponse的时候，才会触发onCharacteristicWrite回调
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            super.onCharacteristicChanged(gatt, characteristic);
+
+            Log.d(LCAT, "======On Characteristic Changed======UUID: " + characteristic.getUuid() + ", Value: " + characteristic.getValue());
+        }
+    }
+
+
+    /**
+     * 将字节 转换为字符串
+     *
+     * @param src 需要转换的字节数组
+     * @return 返回转换完之后的数据
+     */
+    public static String bytesToHexString(byte[] src) {
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (int i = 0; i < src.length; i++) {
+            int v = src[i] & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
+    }
+    /**
+     * 将字符串转化为16进制的字节
+     *
+     * @param message 需要被转换的字符
+     * @return
+     */
+    public static byte[] getHexBytes(String message) {
+        int len = message.length() / 2;
+        char[] chars = message.toCharArray();
+
+        String[] hexStr = new String[len];
+
+        byte[] bytes = new byte[len];
+
+        for (int i = 0, j = 0; j < len; i += 2, j++) {
+            hexStr[j] = "" + chars[i] + chars[i + 1];
+            bytes[j] = (byte) Integer.parseInt(hexStr[j], 16);
+        }
+        return bytes;
     }
 }
