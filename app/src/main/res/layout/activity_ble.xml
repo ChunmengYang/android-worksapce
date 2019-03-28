@@ -6,25 +6,38 @@
     android:layout_height="match_parent"
     tools:context=".BLEActivity">
 
-    <TextView
-        android:id="@+id/ble_msg"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center_vertical|center_horizontal"
-        android:text="Will scan"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:id="@+id/ble_devices"
-        app:layout_constraintTop_toBottomOf="@id/ble_msg">
-
+        app:layout_constraintTop_toTopOf="parent">
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/ble_msg"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center_vertical|center_horizontal"
+        android:text="Scanning"
+        android:textSize="15dp"
+        app:layout_constraintBottom_toTopOf="@id/ble_connect_button" />
+    <Button
+        android:id="@+id/ble_connect_button"
+        android:layout_width="180dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="30dp"
+        android:background="@android:color/darker_gray"
+        android:text="连接BLE设备"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/ble_read_and_write"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <RelativeLayout
+        android:id="@+id/ble_read_and_write"
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_marginBottom="20dp"
@@ -53,6 +66,7 @@
             android:layout_toLeftOf="@id/ble_read_button"
             android:gravity="center_vertical"
             android:hint="读出的数据"
+            android:textSize="15dp"
             android:text="" />
 
         <Button
@@ -79,6 +93,7 @@
             android:ems="10"
             android:inputType="text"
             android:text=""
+            android:textSize="15dp"
             android:hint="写入的数据"/>
 
     </RelativeLayout>

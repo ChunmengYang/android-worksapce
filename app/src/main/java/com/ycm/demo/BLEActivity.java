@@ -16,6 +16,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -72,13 +73,15 @@ public class BLEActivity extends AppCompatActivity {
     private static String BLE_NAME = "Blank";
     private static String BLE_SERVICE_UUID = "B77A9A19-C4C2-4D36-84F4-F2584C97DE1F";
     private static String BLE_READ_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
-    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
+    private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
+    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "DFDAD554-19DD-4C24-B27E-8DC59B53939E";
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private Boolean isConnected = false;
 
+    private LinearLayout deviceView;
     private TextView msgView;
-    private LinearLayout containerView;
+    private Button scanBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,12 +90,21 @@ public class BLEActivity extends AppCompatActivity {
             Toast.makeText(this, "该设备不支持BLE", Toast.LENGTH_SHORT).show();
             finish();
         }
-
         setContentView(R.layout.activity_ble);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        deviceView = findViewById(R.id.ble_devices);
+
         msgView = findViewById(R.id.ble_msg);
-        containerView = findViewById(R.id.ble_devices);
+        scanBtn = findViewById(R.id.ble_connect_button);
+        scanBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mBluetoothGatt == null || !isConnected) {
+                    startScan();
+                }
+            }
+        });
 
         Button readBtn = findViewById(R.id.ble_read_button);
         readBtn.setOnClickListener(new View.OnClickListener() {
@@ -126,6 +138,19 @@ public class BLEActivity extends AppCompatActivity {
                     BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(BLE_SERVICE_UUID));
                     if (service != null) {
                         Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
+//                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID));
+//
+//                        if (characteristic == null) return;
+//
+//                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
+//                            Log.d(LCAT, "======BLE Write No Response Characteristic Discovered======" + characteristic.getUuid());
+//                            byte[] value = stringToHexByte(writeText.getText().toString());
+//                            Log.d(LCAT, "======BLE Write No Response Characteristic Value======" + Arrays.toString(value));
+//                            characteristic.setValue(value);
+//                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+//                            mBluetoothGatt.writeCharacteristic(characteristic);
+//                        }
+
                         BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_CHARACTERISTIC_UUID));
 
                         if (characteristic == null) return;
@@ -135,7 +160,7 @@ public class BLEActivity extends AppCompatActivity {
                             byte[] value = stringToHexByte(writeText.getText().toString());
                             Log.d(LCAT, "======BLE Write Characteristic Value======" + Arrays.toString(value));
                             characteristic.setValue(value);
-                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                             mBluetoothGatt.writeCharacteristic(characteristic);
                         }
                     }
@@ -144,8 +169,9 @@ public class BLEActivity extends AppCompatActivity {
         });
     }
 
-    private void initScanner() {
+    private void startScan() {
         Log.d(LCAT, "Initializing Scanner");
+        msgView.setTextColor(Color.YELLOW);
         msgView.setText("Initializing Scanner");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -178,47 +204,57 @@ public class BLEActivity extends AppCompatActivity {
             }
             mBleScanCallback = new BLEActivity.BleScanCallback();
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-
-            mFromScanDataThread = new BLEActivity.FromScanDataThread(BLEActivity.this);
         }
 
+        // 清空扫描结果队列
+        queue.clear();
 
         // 启动数据解析线程
-        if (mFromScanDataThread != null) {
-            queue.clear();
-            mFromScanDataThread.start();
-        }
+        mFromScanDataThread = new BLEActivity.FromScanDataThread(BLEActivity.this);
+        mFromScanDataThread.start();
+        Log.d(LCAT, "======Start Scanning======");
+
         // 启动扫描
         if (mBluetoothLeScanner != null) {
             mBluetoothLeScanner.startScan(mBleScanCallback);
+            Log.d(LCAT, "======Start FromScanDataThread======");
         }
 
-        Log.d(LCAT, "======Start Scanning======");
+
         msgView.setText("Scanning");
 
         // 定时器，10秒后结束扫描
-        mTimer = new CountDownTimer((long)15 * 1000, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                //每秒TODO
-            }
-
-            @Override
-            public void onFinish() {
-                if (mBluetoothLeScanner != null) {
-                    mBluetoothLeScanner.stopScan(mBleScanCallback);
-                    Log.d(LCAT, "======Stop Scanning======");
+        if (mTimer == null) {
+            mTimer = new CountDownTimer((long)15 * 1000, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    //每秒TODO
                 }
 
-                if (mFromScanDataThread != null) {
-                    mFromScanDataThread.setRunStatus(false);
-                    Log.d(LCAT, "======Stop FromScanDataThread======");
+                @Override
+                public void onFinish() {
+                    stopScan();
                 }
-
-                msgView.setText("Scan completed");
-            }
-        };
+            };
+        }
         mTimer.start();
+    }
+
+    private void stopScan() {
+        if (mBluetoothLeScanner != null) {
+            mBluetoothLeScanner.stopScan(mBleScanCallback);
+            Log.d(LCAT, "======Stop Scanning======");
+        }
+
+        if (mFromScanDataThread != null) {
+            mFromScanDataThread.setRunStatus(false);
+            Log.d(LCAT, "======Stop FromScanDataThread======");
+        }
+        if (mTimer != null) {
+            mTimer.cancel();
+        }
+
+        msgView.setText("Scan completed");
     }
 
     @Override
@@ -229,13 +265,12 @@ public class BLEActivity extends AppCompatActivity {
                 // 点击确认按钮
                 case Activity.RESULT_OK:
                     Log.d(LCAT, "用户选择开启 Bluetooth，Bluetooth 会被开启");
-                    initScanner();
+                    startScan();
                     break;
                 // 点击取消按钮或点击返回键
                 case Activity.RESULT_CANCELED:
                     Log.d(LCAT, "用户拒绝打开 Bluetooth, Bluetooth 不会被开启");
                     Toast.makeText(this, "需要打开蓝牙才可以搜索到信标！", Toast.LENGTH_LONG).show();
-                    finish();
                     break;
                 default:
                     break;
@@ -250,74 +285,15 @@ public class BLEActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 //用户允许改权限，0表示允许，-1表示拒绝 PERMISSION_GRANTED = 0， PERMISSION_DENIED = -1
                 //这里进行授权被允许的处理
-                initScanner();
+                startScan();
             } else {
                 //permission denied, boo! Disable the functionality that depends on this permission.
                 //这里进行权限被拒绝的处理
                 Toast.makeText(this, "需要打开位置权限才可以搜索到信标", Toast.LENGTH_LONG).show();
-                finish();
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
-    }
-
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        initScanner();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner.stopScan(mBleScanCallback);
-            Log.d(LCAT, "======Stop Scanning======");
-        }
-
-        if (mFromScanDataThread != null) {
-            mFromScanDataThread.setRunStatus(false);
-            Log.d(LCAT, "======Stop FromScanDataThread======");
-        }
-        mTimer.cancel();
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (mBluetoothGatt != null) {
-            mBluetoothGatt.disconnect();
-        }
-        mBluetoothGatt = null;
-        mBluetoothDevice = null;
-
-        mBluetoothManager = null;
-        if (mBluetoothAdapter!= null && mBluetoothAdapter.isEnabled()) {
-            mBluetoothAdapter.disable();
-        }
-        mBluetoothAdapter = null;
-        mBluetoothLeScanner = null;
-        mBleScanCallback = null;
-        mFromScanDataThread = null;
-        mTimer = null;
-        queue.clear();
-
-        msgView = null;
-        containerView.removeAllViews();
-        containerView = null;
-
-        super.onDestroy();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -407,21 +383,14 @@ public class BLEActivity extends AppCompatActivity {
     }
 
     private void setupBluetoothDevice(final BluetoothDevice device, int rssi) {
+        stopScan();
+
+        deviceView.removeAllViews();
+        mBluetoothDevice = null;
         if (mBluetoothGatt != null) {
-            return;
+            mBluetoothGatt.disconnect();
+            mBluetoothGatt = null;
         }
-
-        if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner.stopScan(mBleScanCallback);
-            Log.d(LCAT, "======Stop Scanning======");
-        }
-
-        if (mFromScanDataThread != null) {
-            mFromScanDataThread.setRunStatus(false);
-            Log.d(LCAT, "======Stop FromScanDataThread======");
-        }
-        mTimer.cancel();
-        msgView.setText("Scan completed");
 
         LayoutInflater inflater = LayoutInflater.from(BLEActivity.this);
         ConstraintLayout layout = (ConstraintLayout)inflater.inflate(R.layout.ble_item, null);
@@ -439,13 +408,11 @@ public class BLEActivity extends AppCompatActivity {
         TextView rssiView = layout.findViewById(R.id.ble_item_rssi);
         rssiView.setText(String.valueOf(rssi));
 
-        containerView.addView(layout, 0);
+        deviceView.addView(layout);
 
         mBluetoothDevice = device;
         mBluetoothGatt = mBluetoothDevice.connectGatt(BLEActivity.this, false, new MyBluetoothGattCallback(BLEActivity.this));
-        if (mBluetoothGatt.connect()) {
-            Log.d(LCAT, "======mBluetoothGatt Connected======");
-        }
+        mBluetoothGatt.connect();
     }
 
     private static class MyBluetoothGattCallback extends BluetoothGattCallback {
@@ -455,7 +422,6 @@ public class BLEActivity extends AppCompatActivity {
             weakReference = new WeakReference<BLEActivity>(activity);
         }
 
-
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
@@ -464,6 +430,8 @@ public class BLEActivity extends AppCompatActivity {
 
                 if (weakReference.get() != null) {
                     weakReference.get().isConnected = true;
+                    weakReference.get().msgView.setTextColor(Color.GREEN);
+                    weakReference.get().msgView.setText("Connected");
                 }
                 gatt.discoverServices();
                 return;
@@ -472,7 +440,8 @@ public class BLEActivity extends AppCompatActivity {
             Log.d(LCAT, "======BLE Disconnected======" + gatt.getDevice().getName());
             if (weakReference.get() != null) {
                 weakReference.get().isConnected = false;
-                weakReference.get().mBluetoothGatt.connect();
+                weakReference.get().msgView.setTextColor(Color.RED);
+                weakReference.get().msgView.setText("Disconnected");
             }
         }
 
@@ -492,7 +461,6 @@ public class BLEActivity extends AppCompatActivity {
 
                 if (weakReference.get() != null) {
                     TextView readText = weakReference.get().findViewById(R.id.ble_read_msg);
-
                     readText.setText(value);
                 }
             }
@@ -502,6 +470,16 @@ public class BLEActivity extends AppCompatActivity {
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(gatt, characteristic, status);
             //只有setType是writeWithResponse的时候，才会触发onCharacteristicWrite回调
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                String value = hexBytesToString(characteristic.getValue());
+
+                Log.d(LCAT, "======On Characteristic Write======UUID: " + characteristic.getUuid() + ", Value: " + Arrays.toString(characteristic.getValue()));
+
+                if (weakReference.get() != null) {
+                    TextView readText = weakReference.get().findViewById(R.id.ble_read_msg);
+                    readText.setText(value);
+                }
+            }
         }
 
         @Override
@@ -514,7 +492,7 @@ public class BLEActivity extends AppCompatActivity {
 
 
     /**
-     * 将utf-8字符串转换为16进制字节
+     * 将utf-8字符串转换为16进制字节(写入数据)
      *
      * @param str 需要转换的字符串
      * @return 返回转换完之后的数据
@@ -541,7 +519,7 @@ public class BLEActivity extends AppCompatActivity {
         return stringBuilder.toString().getBytes();
     }
     /**
-     * 将16进制的字节转化为UTF-8字符串
+     * 将16进制的字节转化为UTF-8字符串(解析读出数据)
      *
      * @param src 需要被转换的字节
      * @return 返回转换完之后的数据
@@ -572,5 +550,48 @@ public class BLEActivity extends AppCompatActivity {
 
     private static byte charToByte(char c) {
         return (byte) "0123456789ABCDEF".indexOf(c);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopScan();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mBluetoothDevice = null;
+        if (mBluetoothGatt != null) {
+            mBluetoothGatt.disconnect();
+        }
+        mBluetoothGatt = null;
+
+
+        mBluetoothManager = null;
+        if (mBluetoothAdapter!= null && mBluetoothAdapter.isEnabled()) {
+            mBluetoothAdapter.disable();
+        }
+        mBluetoothAdapter = null;
+        mBluetoothLeScanner = null;
+        mBleScanCallback = null;
+        mFromScanDataThread = null;
+        mTimer = null;
+        queue.clear();
+
+        deviceView.removeAllViews();
+        deviceView = null;
+        msgView = null;
+        scanBtn = null;
+
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
