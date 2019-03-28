@@ -34,7 +34,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -81,6 +83,11 @@ public class BLEActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(this, "该设备不支持BLE", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
         setContentView(R.layout.activity_ble);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -102,7 +109,6 @@ public class BLEActivity extends AppCompatActivity {
 
                         if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
                             Log.d(LCAT, "======BLE Read Characteristic Discovered======" + characteristic.getUuid());
-
                             mBluetoothGatt.readCharacteristic(characteristic);
                         }
                     }
@@ -126,9 +132,9 @@ public class BLEActivity extends AppCompatActivity {
 
                         if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
                             Log.d(LCAT, "======BLE Write Characteristic Discovered======" + characteristic.getUuid());
-
-                            Log.d(LCAT, "======BLE Write Characteristic Value======" + writeText.getText().toString());
-                            characteristic.setValue(getHexBytes(writeText.getText().toString()));
+                            byte[] value = stringToHexByte(writeText.getText().toString());
+                            Log.d(LCAT, "======BLE Write Characteristic Value======" + Arrays.toString(value));
+                            characteristic.setValue(value);
                             characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                             mBluetoothGatt.writeCharacteristic(characteristic);
                         }
@@ -466,8 +472,8 @@ public class BLEActivity extends AppCompatActivity {
             Log.d(LCAT, "======BLE Disconnected======" + gatt.getDevice().getName());
             if (weakReference.get() != null) {
                 weakReference.get().isConnected = false;
+                weakReference.get().mBluetoothGatt.connect();
             }
-            gatt.connect();
         }
 
         @Override
@@ -480,9 +486,9 @@ public class BLEActivity extends AppCompatActivity {
             super.onCharacteristicRead(gatt, characteristic, status);
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                String value = bytesToHexString(characteristic.getValue());
+                String value = hexBytesToString(characteristic.getValue());
 
-                Log.d(LCAT, "======On Characteristic Read======UUID: " + characteristic.getUuid() + ", Value: " + value);
+                Log.d(LCAT, "======On Characteristic Read======UUID: " + characteristic.getUuid() + ", Value: " + Arrays.toString(characteristic.getValue()));
 
                 if (weakReference.get() != null) {
                     TextView readText = weakReference.get().findViewById(R.id.ble_read_msg);
@@ -508,12 +514,18 @@ public class BLEActivity extends AppCompatActivity {
 
 
     /**
-     * 将字节 转换为字符串
+     * 将utf-8字符串转换为16进制字节
      *
-     * @param src 需要转换的字节数组
+     * @param str 需要转换的字符串
      * @return 返回转换完之后的数据
      */
-    public static String bytesToHexString(byte[] src) {
+    private static byte[] stringToHexByte(String str) {
+        if (str == null || str.equals("")) {
+            return null;
+        }
+
+        byte[] src = str.getBytes();
+
         StringBuilder stringBuilder = new StringBuilder("");
         if (src == null || src.length <= 0) {
             return null;
@@ -526,26 +538,39 @@ public class BLEActivity extends AppCompatActivity {
             }
             stringBuilder.append(hv);
         }
-        return stringBuilder.toString();
+        return stringBuilder.toString().getBytes();
     }
     /**
-     * 将字符串转化为16进制的字节
+     * 将16进制的字节转化为UTF-8字符串
      *
-     * @param message 需要被转换的字符
-     * @return
+     * @param src 需要被转换的字节
+     * @return 返回转换完之后的数据
      */
-    public static byte[] getHexBytes(String message) {
-        int len = message.length() / 2;
-        char[] chars = message.toCharArray();
-
-        String[] hexStr = new String[len];
-
-        byte[] bytes = new byte[len];
-
-        for (int i = 0, j = 0; j < len; i += 2, j++) {
-            hexStr[j] = "" + chars[i] + chars[i + 1];
-            bytes[j] = (byte) Integer.parseInt(hexStr[j], 16);
+    private static String hexBytesToString(byte[] src) {
+        String hexString = new String(src);
+        if (hexString == null || hexString.equals("")) {
+            return null;
         }
-        return bytes;
+        hexString = hexString.toUpperCase();
+        int length = hexString.length() / 2;
+        char[] hexChars = hexString.toCharArray();
+        byte[] d = new byte[length];
+        for (int i = 0; i < length; i++) {
+            int pos = i * 2;
+            d[i] = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));
+        }
+
+        String str = null;
+        try {
+            str = new String (d,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return str;
+    }
+
+    private static byte charToByte(char c) {
+        return (byte) "0123456789ABCDEF".indexOf(c);
     }
 }
