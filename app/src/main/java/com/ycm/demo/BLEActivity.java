@@ -75,6 +75,7 @@ public class BLEActivity extends AppCompatActivity {
     private static String BLE_READ_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
     private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
     private static String BLE_WIRTE_CHARACTERISTIC_UUID = "DFDAD554-19DD-4C24-B27E-8DC59B53939E";
+    private static String BLE_NOTIF_CHARACTERISTIC_UUID = "4C2345A7-6628-4A9A-AFCA-3E9478E8D94A";
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private Boolean isConnected = false;
@@ -123,6 +124,28 @@ public class BLEActivity extends AppCompatActivity {
                             Log.d(LCAT, "======BLE Read Characteristic Discovered======" + characteristic.getUuid());
                             mBluetoothGatt.readCharacteristic(characteristic);
                         }
+
+
+//                        Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
+//                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_NOTIF_CHARACTERISTIC_UUID));
+//
+//                        if (characteristic == null) return;
+//
+//                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+//                            Log.d(LCAT, "======BLE Notif Characteristic Discovered======" + characteristic.getUuid());
+//
+//                            boolean isEnableNotification = mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+//                            if(isEnableNotification) {
+//                                List<BluetoothGattDescriptor> descriptorList = characteristic.getDescriptors();
+//                                if(descriptorList != null && descriptorList.size() > 0) {
+//                                    for(BluetoothGattDescriptor descriptor : descriptorList) {
+//                                        Log.d(LCAT, "======BluetoothGattDescriptor Discovered======" + descriptor.getUuid());
+//                                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+//                                        mBluetoothGatt.writeDescriptor(descriptor);
+//                                    }
+//                                }
+//                            }
+//                        }
                     }
                 }
             }
@@ -485,8 +508,9 @@ public class BLEActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
+            String value = hexBytesToString(characteristic.getValue());
 
-            Log.d(LCAT, "======On Characteristic Changed======UUID: " + characteristic.getUuid() + ", Value: " + characteristic.getValue());
+            Log.d(LCAT, "======On Characteristic Changed======UUID: " + characteristic.getUuid() + ", Value: " + value);
         }
     }
 
