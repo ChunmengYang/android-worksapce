@@ -71,10 +71,10 @@ public class BLEActivity extends AppCompatActivity {
     private CountDownTimer mTimer;
 
     private static String BLE_NAME = "Blank";
-    private static String BLE_SERVICE_UUID = "B77A9A19-C4C2-4D36-84F4-F2584C97DE1F";
-    private static String BLE_READ_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
-    private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "C80804CC-3996-44A1-BE2B-51DFBA3634AC";
-    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "DFDAD554-19DD-4C24-B27E-8DC59B53939E";
+    private static String BLE_SERVICE_UUID = "C5586A02-7D57-442A-8B96-A58DAEAFBF9C";
+    private static String BLE_READ_CHARACTERISTIC_UUID = "6DA52D0E-762F-49A5-BB0F-A93D2462DAFE";
+    private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "9D1A3E63-C6D4-4323-BE47-AC0C3FE0177E";
+    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "F5524538-EFEA-45A9-B9E7-3CFE3FAEC5E8";
     private static String BLE_NOTIF_CHARACTERISTIC_UUID = "4C2345A7-6628-4A9A-AFCA-3E9478E8D94A";
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
