@@ -161,31 +161,31 @@ public class BLEActivity extends AppCompatActivity {
                     BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(BLE_SERVICE_UUID));
                     if (service != null) {
                         Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
-//                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID));
-//
-//                        if (characteristic == null) return;
-//
-//                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
-//                            Log.d(LCAT, "======BLE Write No Response Characteristic Discovered======" + characteristic.getUuid());
-//                            byte[] value = stringToHexByte(writeText.getText().toString());
-//                            Log.d(LCAT, "======BLE Write No Response Characteristic Value======" + Arrays.toString(value));
-//                            characteristic.setValue(value);
-//                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-//                            mBluetoothGatt.writeCharacteristic(characteristic);
-//                        }
-
-                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_CHARACTERISTIC_UUID));
+                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID));
 
                         if (characteristic == null) return;
 
-                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
-                            Log.d(LCAT, "======BLE Write Characteristic Discovered======" + characteristic.getUuid());
+                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
+                            Log.d(LCAT, "======BLE Write No Response Characteristic Discovered======" + characteristic.getUuid());
                             byte[] value = stringToHexByte(writeText.getText().toString());
-                            Log.d(LCAT, "======BLE Write Characteristic Value======" + Arrays.toString(value));
+                            Log.d(LCAT, "======BLE Write No Response Characteristic Value======" + Arrays.toString(value));
                             characteristic.setValue(value);
-                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                             mBluetoothGatt.writeCharacteristic(characteristic);
                         }
+
+//                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_CHARACTERISTIC_UUID));
+//
+//                        if (characteristic == null) return;
+//
+//                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
+//                            Log.d(LCAT, "======BLE Write Characteristic Discovered======" + characteristic.getUuid());
+//                            byte[] value = stringToHexByte(writeText.getText().toString());
+//                            Log.d(LCAT, "======BLE Write Characteristic Value======" + Arrays.toString(value));
+//                            characteristic.setValue(value);
+//                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+//                            mBluetoothGatt.writeCharacteristic(characteristic);
+//                        }
                     }
                 }
             }
