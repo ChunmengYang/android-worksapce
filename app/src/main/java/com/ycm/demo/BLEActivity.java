@@ -71,11 +71,10 @@ public class BLEActivity extends AppCompatActivity {
     private CountDownTimer mTimer;
 
     private static String BLE_NAME = "Blank";
-    private static String BLE_SERVICE_UUID = "C5586A02-7D57-442A-8B96-A58DAEAFBF9C";
-    private static String BLE_READ_CHARACTERISTIC_UUID = "6DA52D0E-762F-49A5-BB0F-A93D2462DAFE";
-    private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "9D1A3E63-C6D4-4323-BE47-AC0C3FE0177E";
-    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "F5524538-EFEA-45A9-B9E7-3CFE3FAEC5E8";
-    private static String BLE_NOTIF_CHARACTERISTIC_UUID = "4C2345A7-6628-4A9A-AFCA-3E9478E8D94A";
+    private static String BLE_SERVICE_UUID = "0E61690A-B38D-43A0-9394-1FA76DD65E80";
+    private static String BLE_READ_CHARACTERISTIC_UUID = "10E662A7-C116-41D5-9C25-6C6996FFB06A";
+    private static String BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID = "B309B160-234B-4015-900A-5C08E07770BC";
+    private static String BLE_WIRTE_CHARACTERISTIC_UUID = "8AD25B3F-82EF-47C9-82AA-6910C7D29BAD";
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private Boolean isConnected = false;
@@ -116,7 +115,7 @@ public class BLEActivity extends AppCompatActivity {
                     BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(BLE_SERVICE_UUID));
                     if (service != null) {
                         Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
-                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_READ_CHARACTERISTIC_UUID));
+                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_WIRTE_NO_RESPONSE_CHARACTERISTIC_UUID));
 
                         if (characteristic == null) return;
 
@@ -124,28 +123,6 @@ public class BLEActivity extends AppCompatActivity {
                             Log.d(LCAT, "======BLE Read Characteristic Discovered======" + characteristic.getUuid());
                             mBluetoothGatt.readCharacteristic(characteristic);
                         }
-
-
-//                        Log.d(LCAT, "======BLE Service Discovered======" + service.getUuid());
-//                        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(BLE_NOTIF_CHARACTERISTIC_UUID));
-//
-//                        if (characteristic == null) return;
-//
-//                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-//                            Log.d(LCAT, "======BLE Notif Characteristic Discovered======" + characteristic.getUuid());
-//
-//                            boolean isEnableNotification = mBluetoothGatt.setCharacteristicNotification(characteristic, true);
-//                            if(isEnableNotification) {
-//                                List<BluetoothGattDescriptor> descriptorList = characteristic.getDescriptors();
-//                                if(descriptorList != null && descriptorList.size() > 0) {
-//                                    for(BluetoothGattDescriptor descriptor : descriptorList) {
-//                                        Log.d(LCAT, "======BluetoothGattDescriptor Discovered======" + descriptor.getUuid());
-//                                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-//                                        mBluetoothGatt.writeDescriptor(descriptor);
-//                                    }
-//                                }
-//                            }
-//                        }
                     }
                 }
             }
@@ -167,7 +144,7 @@ public class BLEActivity extends AppCompatActivity {
 
                         if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
                             Log.d(LCAT, "======BLE Write No Response Characteristic Discovered======" + characteristic.getUuid());
-                            byte[] value = stringToHexByte(writeText.getText().toString());
+                            byte[] value = toWriteByte(writeText.getText().toString(), ENCODE_UTF8);
                             Log.d(LCAT, "======BLE Write No Response Characteristic Value======" + Arrays.toString(value));
                             characteristic.setValue(value);
                             characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
@@ -180,7 +157,7 @@ public class BLEActivity extends AppCompatActivity {
 //
 //                        if ((characteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
 //                            Log.d(LCAT, "======BLE Write Characteristic Discovered======" + characteristic.getUuid());
-//                            byte[] value = stringToHexByte(writeText.getText().toString());
+//                            byte[] value = toWriteByte(writeText.getText().toString(), ENCODE_UTF8);
 //                            Log.d(LCAT, "======BLE Write Characteristic Value======" + Arrays.toString(value));
 //                            characteristic.setValue(value);
 //                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
@@ -478,7 +455,7 @@ public class BLEActivity extends AppCompatActivity {
             super.onCharacteristicRead(gatt, characteristic, status);
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                String value = hexBytesToString(characteristic.getValue());
+                String value = toReadString(characteristic.getValue(), ENCODE_UTF8);
 
                 Log.d(LCAT, "======On Characteristic Read======UUID: " + characteristic.getUuid() + ", Value: " + Arrays.toString(characteristic.getValue()));
 
@@ -494,7 +471,7 @@ public class BLEActivity extends AppCompatActivity {
             super.onCharacteristicWrite(gatt, characteristic, status);
             //只有setType是writeWithResponse的时候，才会触发onCharacteristicWrite回调
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                String value = hexBytesToString(characteristic.getValue());
+                String value = toReadString(characteristic.getValue(), ENCODE_UTF8);
 
                 Log.d(LCAT, "======On Characteristic Write======UUID: " + characteristic.getUuid() + ", Value: " + Arrays.toString(characteristic.getValue()));
 
@@ -508,12 +485,49 @@ public class BLEActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-            String value = hexBytesToString(characteristic.getValue());
+            String value = toReadString(characteristic.getValue(), ENCODE_UTF8);
 
             Log.d(LCAT, "======On Characteristic Changed======UUID: " + characteristic.getUuid() + ", Value: " + value);
         }
     }
 
+
+    private static final String ENCODE_HEX = "Hex";
+    private static final String ENCODE_UTF8 = "UTF-8";
+
+    /*
+    * 将UTF-8字符串转成byte[]
+    *
+    * @param str 需要转换的字符串
+    * @param encode 返回数据编码格式，UTF-8或Hex
+    * @return 返回转换完之后的数据
+    * */
+    private static byte[] toWriteByte(String str, String encode) {
+        if (ENCODE_HEX.equals(encode)) {
+            return stringToHexByte(str);
+        } else {
+            return str.getBytes();
+        }
+    }
+    /*
+     * 将byte[]转成UTF-8字符串
+     *
+     * @param str 需要转换的byte[]
+     * @param encode 参数的编码格式，UTF-8或Hex
+     * @return 返回转换完之后的数据
+     * */
+    private static String toReadString(byte[] str, String encode) {
+        if (ENCODE_HEX.equals(encode)) {
+            return hexBytesToString(str);
+        } else {
+            try {
+                return new String(str, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return  "";
+            }
+        }
+    }
 
     /**
      * 将utf-8字符串转换为16进制字节(写入数据)
