@@ -137,13 +137,13 @@ public final class ViewfinderView extends View {
 
 
             /*绘制提示文字*/
-            //  drawStatusText(canvas, frame, width);
+            drawStatusText(canvas, frame, width);
 
             /*绘制扫描线*/
-           // drawScanLight(canvas, frame);
+//            drawScanLight(canvas, frame);
 
             /*绘制闪动的点*/
-            drawPoint(canvas, frame, previewFrame);
+//            drawPoint(canvas, frame, previewFrame);
         }
     }
 
@@ -315,14 +315,14 @@ public final class ViewfinderView extends View {
         } else {
 
             /*缓动动画*/
-//            SCAN_VELOCITY = (frame.bottom - scanLineTop) / 12;
-//            SCAN_VELOCITY = (int) (SCAN_VELOCITY > 10 ? Math.ceil(SCAN_VELOCITY) : 10);
+            SCAN_VELOCITY = (frame.bottom - scanLineTop) / 12;
+            SCAN_VELOCITY = (int) (SCAN_VELOCITY > 10 ? Math.ceil(SCAN_VELOCITY) : 10);
             scanLineTop += SCAN_VELOCITY;
         }
 
-//        Rect scanRect = new Rect(frame.left, scanLineTop, frame.right,
-//                scanLineTop + scanLightHeight);
-//        canvas.drawBitmap(scanLight, null, scanRect, paint);
+        Rect scanRect = new Rect(frame.left, scanLineTop, frame.right,
+                scanLineTop + scanLightHeight);
+        canvas.drawBitmap(scanLight, null, scanRect, paint);
 
 
         paint.setColor(reactColor);
