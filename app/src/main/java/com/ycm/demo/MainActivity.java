@@ -20,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.ListPopupWindow;
 import android.widget.TextView;
 
+import com.ycm.webserver.WebServerActivity;
 import com.ycm.zxinglibrary.android.Intents;
 import com.ycm.zxinglibrary.common.Constant;
 
@@ -131,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.main_options_ble:
                 Intent bleIntent = new Intent(MainActivity.this, BLEActivity.class);
                 startActivity(bleIntent);
+                break;
+            case R.id.main_webserver:
+                Intent serverIntent = new Intent(MainActivity.this, WebServerActivity.class);
+                startActivity(serverIntent);
                 break;
             default:
                 break;
