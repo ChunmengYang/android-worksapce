@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".WifiActivity">
+
+    <TextView
+        android:id="@+id/wifi_hotspot_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center_vertical|center_horizontal"
+        android:text="点击开启Wi-Fi热点"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/wifi_hotspot_open"
+        android:layout_width="130dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="20dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_hotspot_msg"
+        android:text="开启Wi-Fi热点" />
+
+    <Button
+        android:id="@+id/wifi_hotspot_close"
+        android:layout_width="130dp"
+        android:layout_height="45dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_hotspot_open"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        android:text="关闭Wi-Fi热点" />
+
+    <TextView
+        android:id="@+id/wifi_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_hotspot_close"
+        android:text="点击搜索Wi-Fi" />
+
+    <Button
+        android:id="@+id/wifi_search"
+        android:layout_width="100dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginLeft="30dp"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_msg"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:text="搜索Wi-Fi" />
+
+    <Button
+        android:id="@+id/wifi_post_data"
+        android:layout_width="100dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginRight="30dp"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_msg"
+        app:layout_constraintRight_toRightOf="parent"
+        android:text="发送数据" />
+
+    <ListView
+        android:id="@+id/wifi_items"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        app:layout_constraintTop_toBottomOf="@+id/wifi_post_data" />
+
+</android.support.constraint.ConstraintLayout>

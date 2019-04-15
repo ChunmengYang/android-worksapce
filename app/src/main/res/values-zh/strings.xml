@@ -8,6 +8,7 @@
     <string name="main_image_upload_and_download">图片上传下载</string>
     <string name="main_ble">BLE</string>
     <string name="main_webserver">WebServer</string>
+    <string name="main_wifi">Wi-Fi</string>
 
     <!--zxing-->
     <string name="qrcode_scan">扫一扫</string>

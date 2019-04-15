@@ -24,4 +24,9 @@
         android:id="@+id/main_webserver"
         android:icon="@drawable/ic_web_24dp"
         android:title="@string/main_webserver" />
+
+    <item
+        android:id="@+id/main_wifi"
+        android:icon="@drawable/ic_wifi_24dp"
+        android:title="@string/main_wifi" />
 </menu>

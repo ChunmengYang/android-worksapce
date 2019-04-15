@@ -137,6 +137,10 @@ public class MainActivity extends AppCompatActivity {
                 Intent serverIntent = new Intent(MainActivity.this, WebServerActivity.class);
                 startActivity(serverIntent);
                 break;
+            case R.id.main_wifi:
+                Intent wifiIntent = new Intent(MainActivity.this, WifiActivity.class);
+                startActivity(wifiIntent);
+                break;
             default:
                 break;
         }
