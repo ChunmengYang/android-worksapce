@@ -28,7 +28,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -134,7 +137,7 @@ public class WifiActivity extends AppCompatActivity {
                 search();
             }
         });
-        postDataBtn = findViewById(R.id.wifi_post_data);
+
         wifiListView = findViewById(R.id.wifi_items);
         mScanResultAdapter = new ScanResultAdapter(WifiActivity.this, R.layout.wifi_item, new ArrayList<ScanResult>());
         wifiListView.setAdapter(mScanResultAdapter);
@@ -144,6 +147,15 @@ public class WifiActivity extends AppCompatActivity {
 
                 ScanResult result = mScanResultAdapter.getItem(position);
                 connect(result);
+            }
+        });
+
+        // 通过socket发送数据
+        postDataBtn = findViewById(R.id.wifi_post_data);
+        postDataBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                postData();
             }
         });
     }
@@ -522,6 +534,71 @@ public class WifiActivity extends AppCompatActivity {
         }
         return null;
     }
+
+    /**
+     * 通过socket发送数据
+     * */
+    private void postData() {
+        new Thread() {
+            @Override
+            public void run() {
+               final Socket socket;
+
+                try {
+                    socket = new Socket("192.168.1.9", 1989);
+
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                            socket.getOutputStream()));
+                    writer.write("how are you?");
+                    writer.flush();
+                    writer.close();
+
+                    socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+
+//        Runnable runnable = new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                Socket socket;
+//
+//                try {
+//                    socket = new Socket("192.168.1.9", 1989);
+//
+//                    OutputStream outputStream = socket.getOutputStream();
+//
+//                    File tempCropFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),
+//                            "temp_crop_photo.jpg");
+//                    if (!tempCropFile.exists()) return;
+//
+//                    InputStream inputStream = new FileInputStream(tempCropFile);
+//                    byte buffer[] = new byte[4 * 1024];
+//                    int temp = 0;
+//                    while ((temp = inputStream.read(buffer)) != -1) {
+//                        // 把数据写入到OuputStream对象中
+//                        outputStream.write(buffer, 0, temp);
+//                    }
+//                    inputStream.close();
+//                    // 发送数据
+//                    outputStream.flush();
+//                    outputStream.close();
+//
+//                    socket.close();
+//
+//                } catch (UnknownHostException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
+//        new Thread(runnable).start();
+    }
+
 
     @Override
     protected void onDestroy() {
