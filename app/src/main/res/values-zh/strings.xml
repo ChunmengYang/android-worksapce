@@ -9,6 +9,7 @@
     <string name="main_ble">BLE</string>
     <string name="main_webserver">WebServer</string>
     <string name="main_wifi">Wi-Fi</string>
+    <string name="main_udp_broad_cast">UDP广播</string>
 
     <!--zxing-->
     <string name="qrcode_scan">扫一扫</string>

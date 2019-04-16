@@ -29,4 +29,19 @@
         android:id="@+id/main_wifi"
         android:icon="@drawable/ic_wifi_24dp"
         android:title="@string/main_wifi" />
+
+    <item
+        android:id="@+id/main_wifi_direct_server"
+        android:icon="@drawable/ic_wifi_24dp"
+        android:title="Wi-Fi Direct Server" />
+
+    <item
+        android:id="@+id/main_wifi_direct_client"
+        android:icon="@drawable/ic_wifi_24dp"
+        android:title="Wi-Fi Direct Client" />
+
+    <item
+        android:id="@+id/main_udp_broad_cast"
+        android:icon="@drawable/ic_wifi_24dp"
+        android:title="@string/main_udp_broad_cast" />
 </menu>

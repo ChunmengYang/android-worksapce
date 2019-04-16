@@ -141,6 +141,18 @@ public class MainActivity extends AppCompatActivity {
                 Intent wifiIntent = new Intent(MainActivity.this, WifiActivity.class);
                 startActivity(wifiIntent);
                 break;
+            case R.id.main_wifi_direct_server:
+                Intent wifiServerIntent = new Intent(MainActivity.this, WifiDirectServerActivity.class);
+                startActivity(wifiServerIntent);
+                break;
+            case R.id.main_wifi_direct_client:
+                Intent wifiClientIntent = new Intent(MainActivity.this, WifiDirectActivity.class);
+                startActivity(wifiClientIntent);
+                break;
+            case R.id.main_udp_broad_cast:
+                Intent udpIntent = new Intent(MainActivity.this, UdpBroadCastActivity.class);
+                startActivity(udpIntent);
+                break;
             default:
                 break;
         }
