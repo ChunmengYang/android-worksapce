@@ -6,9 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".WifiDirectServerActivity">
 
-
     <TextView
         android:id="@+id/wifi_p2p_server_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/wifi_p2p_connection_msg"
+        android:layout_marginBottom="30dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:gravity="center_horizontal"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/wifi_p2p_connection_msg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toTopOf="@id/wifi_p2p_server_start"
