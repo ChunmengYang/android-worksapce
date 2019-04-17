@@ -198,6 +198,26 @@ public class WifiDirectClientManager {
         isWifiP2pEnabled = state;
         actionListener.onWifiP2pEnabled(isWifiP2pEnabled);
     }
+
+    private void setConnectSuccess(final WifiP2pInfo info) {
+        isConnected = true;
+        stopDiscover();
+
+        actionListener.onConnection(info);
+        new Thread() {
+            @Override
+            public void run() {
+                Log.d(LCAT, "=========Connect Device Success=========" + info.groupOwnerAddress.getHostName());
+            }
+        }.start();
+    }
+
+    private void setConnectFailure() {
+        isConnected = false;
+        actionListener.onDisconnection();
+        Log.d(LCAT, "=========与P2P设备已断开连接=========");
+    }
+
     /*
      * Wi-Fi P2P可用状态接收器
      */
@@ -226,27 +246,18 @@ public class WifiDirectClientManager {
                 if (networkInfo.isConnected()) {
                     mWifiP2pManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
                         @Override
-                        public void onConnectionInfoAvailable(final WifiP2pInfo info) {
+                        public void onConnectionInfoAvailable(WifiP2pInfo info) {
 
                             if (info.groupFormed && info.isGroupOwner) {
                                 // 作为服务器
 
                             } else if (info.groupFormed) {
-                                isConnected = true;
-                                actionListener.onConnection(info);
-                                new Thread() {
-                                    @Override
-                                    public void run() {
-                                        Log.d(LCAT, "=========Connect Device Success=========" + info.groupOwnerAddress.getHostName());
-                                    }
-                                }.start();
+                                setConnectSuccess(info);
                             }
                         }
                     });
                 } else {
-                    isConnected = false;
-                    actionListener.onDisconnection();
-                    Log.d(LCAT, "=========与P2P设备已断开连接=========");
+                    setConnectFailure();
                 }
             }
         }
