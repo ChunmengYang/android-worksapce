@@ -99,7 +99,7 @@
 
         <activity android:name=".WifiActivity" />
         <activity android:name=".UdpBroadCastActivity" />
-        <activity android:name=".WifiDirectActivity" />
+        <activity android:name=".WifiDirectClientActivity" />
         <activity android:name=".WifiDirectServerActivity"></activity>
     </application>
 

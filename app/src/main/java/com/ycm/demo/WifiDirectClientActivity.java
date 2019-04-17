@@ -19,8 +19,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Date;
 
-public class WifiDirectActivity extends AppCompatActivity implements WifiDirectClientManager.ActionListener{
-    private static final String LCAT = "WifiDirectActivity";
+public class WifiDirectClientActivity extends AppCompatActivity implements WifiDirectClientManager.ActionListener{
+    private static final String LCAT = "WifiDirectClientActivity";
 
     private TextView msgView;
     private Button startSearchBtn;
@@ -35,7 +35,7 @@ public class WifiDirectActivity extends AppCompatActivity implements WifiDirectC
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_wifi_direct);
+        setContentView(R.layout.activity_wifi_direct_client);
 
         msgView = findViewById(R.id.wifi_p2p_msg);
         startSearchBtn = findViewById(R.id.wifi_p2p_search_start);
@@ -43,7 +43,7 @@ public class WifiDirectActivity extends AppCompatActivity implements WifiDirectC
         postDataBtn = findViewById(R.id.wifi_p2p_post_data);
 
         wifiListView = findViewById(R.id.wifi_p2p_items);
-        mScanResultAdapter = new ScanResultAdapter(WifiDirectActivity.this, R.layout.wifi_item, new ArrayList<WifiP2pDevice>());
+        mScanResultAdapter = new ScanResultAdapter(WifiDirectClientActivity.this, R.layout.wifi_item, new ArrayList<WifiP2pDevice>());
         wifiListView.setAdapter(mScanResultAdapter);
         wifiListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -54,7 +54,7 @@ public class WifiDirectActivity extends AppCompatActivity implements WifiDirectC
             }
         });
 
-        clientManager = new WifiDirectClientManager(WifiDirectActivity.this, this);
+        clientManager = new WifiDirectClientManager(WifiDirectClientActivity.this, this);
 
         postDataBtn.setOnClickListener(new View.OnClickListener() {
             @Override
