@@ -17,7 +17,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Date;
 
 public class WifiDirectClientActivity extends AppCompatActivity implements WifiDirectClientManager.ActionListener{
     private static final String LCAT = "WifiDirectClientActivity";
@@ -60,7 +59,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
             @Override
             public void onClick(View v) {
                 if (currentWifiP2pinfo != null) {
-                    clientManager.postData(currentWifiP2pinfo, 8988, "当前时间：" + new Date().toString());
+                    clientManager.postData(currentWifiP2pinfo, 8988, "name=HUAWEI-1505-Plus;password=mash51505");
                 }
             }
         });
@@ -75,6 +74,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
                 @Override
                 public void onClick(View v) {
                     // 开始搜索P2P设备
+                    mScanResultAdapter.clear();
                     clientManager.startDiscover();
                 }
             });
@@ -105,6 +105,8 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
     public void onConnection(WifiP2pInfo wifiP2pInfo) {
         currentWifiP2pinfo = wifiP2pInfo;
         msgView.setText("已连接到P2P设备");
+
+        clientManager.stopDiscover();
     }
 
     @Override
