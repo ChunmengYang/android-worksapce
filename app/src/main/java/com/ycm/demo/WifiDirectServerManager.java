@@ -72,6 +72,7 @@ public class WifiDirectServerManager {
 
     public void openServer(int port) {
         if (!isWifiP2pEnabled) return;
+
         if (isOpened) return;
 
         // 开启数据接收Socket
@@ -100,6 +101,7 @@ public class WifiDirectServerManager {
 
     public void closeServer() {
         if (!isWifiP2pEnabled) return;
+
         if (!isOpened) return;
 
         // 注销Wi-Fi连接状态接收器

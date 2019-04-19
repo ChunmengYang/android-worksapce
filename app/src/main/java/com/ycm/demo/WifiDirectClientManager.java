@@ -72,6 +72,8 @@ public class WifiDirectClientManager {
     private Boolean isDiscovering = false;
 
     public void startDiscover() {
+        if (!isWifiP2pEnabled) return;
+
         if (!isDiscovering) {
             // 注册Wi-Fi Peers接收器
             context.registerReceiver(wifiP2pPeersReceiver, wifiP2pPeersFilter);
@@ -93,6 +95,8 @@ public class WifiDirectClientManager {
     }
 
     public void  stopDiscover() {
+        if (!isWifiP2pEnabled) return;
+
         if (isDiscovering) {
             // 注销Wi-Fi Peers接收器
             context.unregisterReceiver(wifiP2pPeersReceiver);
@@ -118,6 +122,8 @@ public class WifiDirectClientManager {
      * 连接Wi-Fi P2P设备
      */
     public void connect(final WifiP2pDevice device) {
+        if (!isWifiP2pEnabled) return;
+
         if (device == null) return;
 
         if (isConnected) {
@@ -146,6 +152,8 @@ public class WifiDirectClientManager {
      * 取消连接
      */
     public void cancelConnect() {
+        if (!isWifiP2pEnabled) return;
+
         if (!isConnected) return;
 
         mWifiP2pManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
@@ -166,6 +174,8 @@ public class WifiDirectClientManager {
      * 发送数据
      */
     public void postData(WifiP2pInfo info, int port, String data) {
+        if (!isWifiP2pEnabled) return;
+
         if (isConnected && info != null && port > 0 && data != null) {
             new ClientAsyncTask(WifiDirectClientManager.this, info.groupOwnerAddress.getHostAddress(), port).execute(data);
         }
