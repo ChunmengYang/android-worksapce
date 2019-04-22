@@ -1,15 +1,20 @@
 package com.ycm.demo;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,6 +124,22 @@ public class WifiAdmin {
      * 搜索Wi-Fi热点
      */
     public void search() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //判断是否具有位置权限
+            if (context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(context, "需要打开位置权限才可以搜索到Wi-Fi热点", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            boolean gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            boolean network = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            if (!gps && !network) {
+                Toast.makeText(context, "需要打开位置服务才可以搜索到Wi-Fi热点", Toast.LENGTH_LONG).show();
+                return;
+            }
+        }
+
         if (!mWifiManager.isWifiEnabled()) {
             mWifiManager.setWifiEnabled(true);
         }
