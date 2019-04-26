@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(imageIntent);
                 break;
             case R.id.main_options_ble:
-                Intent bleIntent = new Intent(MainActivity.this, BLEActivity.class);
+                Intent bleIntent = new Intent(MainActivity.this, BluetoothActivity.class);
                 startActivity(bleIntent);
                 break;
             case R.id.main_webserver:

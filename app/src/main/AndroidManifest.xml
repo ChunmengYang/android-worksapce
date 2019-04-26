@@ -100,7 +100,8 @@
         <activity android:name=".WifiActivity" />
         <activity android:name=".UdpBroadCastActivity" />
         <activity android:name=".WifiDirectClientActivity" />
-        <activity android:name=".WifiDirectServerActivity"></activity>
+        <activity android:name=".WifiDirectServerActivity" />
+        <activity android:name=".BluetoothActivity"></activity>
     </application>
 
 </manifest>
