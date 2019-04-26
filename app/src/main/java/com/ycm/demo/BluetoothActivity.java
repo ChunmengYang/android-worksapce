@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -50,21 +51,21 @@ public class BluetoothActivity extends AppCompatActivity implements BluetoothAdm
             }
         });
         // 客户端
-//        devicesView = findViewById(R.id.bluetooth_device_list);
-//        adapter = new ScanResultAdapter(BluetoothActivity.this, R.layout.bluetooth_device_item, new ArrayList<BluetoothDevice>());
-//        devicesView.setAdapter(adapter);
-//        devicesView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//                BluetoothDevice device = adapter.getItem(position);
-//                mBluetoothAdmin.connect(device);
-//            }
-//        });
-//        mBluetoothAdmin.startDiscovery();
+        devicesView = findViewById(R.id.bluetooth_device_list);
+        adapter = new ScanResultAdapter(BluetoothActivity.this, R.layout.bluetooth_device_item, new ArrayList<BluetoothDevice>());
+        devicesView.setAdapter(adapter);
+        devicesView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                BluetoothDevice device = adapter.getItem(position);
+                mBluetoothAdmin.connect(device);
+            }
+        });
+        mBluetoothAdmin.startDiscovery();
 
         // 服务端
-        mBluetoothAdmin.createServer();
+//        mBluetoothAdmin.createServer();
     }
 
     @Override
@@ -95,7 +96,17 @@ public class BluetoothActivity extends AppCompatActivity implements BluetoothAdm
         msgView.setText("Disconnection");
         msgView.setTextColor(Color.RED);
 
-        mBluetoothAdmin.createServer();
+//        mBluetoothAdmin.createServer();
+    }
+
+    @Override
+    public void onDiscoveryStarted() {
+        rwMsgView.setText("Discovery Started");
+    }
+
+    @Override
+    public void onDiscoveryFinished() {
+        rwMsgView.setText("Discovery Finished");
     }
 
     @Override

@@ -30,6 +30,12 @@ public class BluetoothAdmin {
         // 发现蓝牙设备
         void onDiscovery(BluetoothDevice device);
 
+        // 开始发现蓝牙设备
+        void onDiscoveryStarted();
+
+        // 完成发现蓝牙设备
+        void onDiscoveryFinished();
+
         // 蓝牙已连接成功
         void onConnectSuccess();
 
@@ -45,7 +51,6 @@ public class BluetoothAdmin {
         void onReadFailed();
 
         void onWriteFailed();
-
     }
 
     private static UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -69,6 +74,8 @@ public class BluetoothAdmin {
 
         // 注册蓝牙搜索接收器
         bluetoothFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 
         bluetoothReceiver = new BluetoothReceiver();
         context.registerReceiver(bluetoothReceiver, bluetoothFilter);
@@ -289,6 +296,14 @@ public class BluetoothAdmin {
                     if (actionListener != null) {
                         actionListener.onDiscovery(device);
                     }
+                }
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                if (actionListener != null) {
+                    actionListener.onDiscoveryStarted();
+                }
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                if (actionListener != null) {
+                    actionListener.onDiscoveryFinished();
                 }
             }
 
