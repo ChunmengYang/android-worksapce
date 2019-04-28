@@ -65,6 +65,7 @@ public class WifiDirectServerActivity extends AppCompatActivity implements WifiD
             public void onConnection(WifiInfo wifiInfo) {
                 connectedWifiName = wifiInfo.getSSID();
                 wifiStateView.setText("Wi-Fi已经连接到：" + wifiInfo.getSSID());
+                serverManager.write("我是服务端，我已经连接到Wi-Fi".getBytes());
             }
 
             @Override
@@ -141,8 +142,10 @@ public class WifiDirectServerActivity extends AppCompatActivity implements WifiD
     }
 
     @Override
-    public void onDataReceive(String result) {
+    public void onDataReceive(byte[] data, int length) {
+        String result = new String(data);
         connectionStateView.setText("收到数据: " + result);
+        serverManager.write("我是服务端，已收到数据".getBytes());
 
 
         String [] strArray = result.split(";");

@@ -11,7 +11,9 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -34,7 +36,7 @@ public class WifiDirectServerManager {
         void onDisconnection();
 
         // Wi-Fi P2P 连接后，接收收到数据
-        void onDataReceive(String result);
+        void onDataReceive(byte[] data, int length);
     }
 
     private Context context;
@@ -75,7 +77,7 @@ public class WifiDirectServerManager {
 
         if (isOpened) return;
 
-        // 开启数据接收Socket
+        // 开启数据Socket
         asyncTask = new ServerAsyncTask(WifiDirectServerManager.this);
         asyncTask.execute(port);
 
@@ -107,10 +109,11 @@ public class WifiDirectServerManager {
         // 注销Wi-Fi连接状态接收器
         context.unregisterReceiver(wifiP2pConnectReceiver);
 
-        // 关闭数据接收Socket
+        // 关闭数据Socket
         if (asyncTask != null) {
             asyncTask.cancel(true);
             asyncTask.close();
+            asyncTask = null;
         }
 
         mWifiP2pManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
@@ -127,6 +130,14 @@ public class WifiDirectServerManager {
 
         isOpened = false;
         actionListener.onServerOpen(isOpened);
+    }
+
+    public void write(byte[] data) {
+        if (!isOpened) return;
+
+        if (asyncTask != null && !asyncTask.isCancelled()) {
+            asyncTask.write(data);
+        }
     }
 
     public void destroy() {
@@ -211,14 +222,15 @@ public class WifiDirectServerManager {
         }
     };
 
-    private void setData(String result) {
-        actionListener.onDataReceive(result);
+    private void setData(byte[] data, int length) {
+        actionListener.onDataReceive(data, length);
     }
 
     private static class ServerAsyncTask extends AsyncTask<Integer, Void, Void> {
 
         WeakReference<WifiDirectServerManager> weakReference;
         private ServerSocket serverSocket;
+        private Socket socket;
 
         public ServerAsyncTask(WifiDirectServerManager manager) {
             weakReference = new WeakReference<WifiDirectServerManager>(manager);
@@ -229,34 +241,11 @@ public class WifiDirectServerManager {
             try {
                 serverSocket = new ServerSocket(port[0]);
 
-                while (!isCancelled()) {
-                    final StringBuffer msg = new StringBuffer();
-                    Socket socket = serverSocket.accept();
+                socket = serverSocket.accept();
 
-                    // 从Socket当中得到InputStream对象
-                    InputStream inputStream = socket.getInputStream();
-                    byte buffer[] = new byte[1024 * 4];
-                    int temp = 0;
-                    // 从InputStream当中读取客户端所发送的数据
-                    while ((temp = inputStream.read(buffer)) != -1) {
-                        msg.append(new String(buffer, 0, temp));
-                    }
+                // 从Socket当中得到InputStream对象
+                read(socket.getInputStream());
 
-                    inputStream.close();
-                    socket.close();
-                    if (weakReference.get() != null) {
-                        final String result = msg.toString();
-
-                        weakReference.get().mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                weakReference.get().setData(result);
-                            }
-                        });
-                    }
-                }
-
-                serverSocket.close();
             } catch (Exception e) {
                 Log.e(LCAT, e.getMessage());
             }
@@ -265,10 +254,60 @@ public class WifiDirectServerManager {
             return null;
         }
 
+
+        private void read(InputStream inputStream) {
+            try {
+                byte buffer[] = new byte[1024 * 4];
+                int temp = 0;
+                // 从InputStream当中读取客户端所发送的数据
+                while ((temp = inputStream.read(buffer)) != -1) {
+                    final byte[] data = buffer;
+                    final int length = temp;
+                    if (weakReference.get() != null) {
+                        weakReference.get().mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                weakReference.get().setData(data, length);
+                            }
+                        });
+                    }
+                }
+                inputStream.close();
+            } catch (IOException e) {
+                Log.e(LCAT, "======read======" + e.toString());
+            }
+        }
+
+        public void write(final byte[] data) {
+            if (socket != null) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (socket.isConnected()) {
+                                OutputStream out = socket.getOutputStream();
+                                out.write(data);
+                                out.flush();
+                            }
+                        } catch (Exception e) {
+                            Log.e(LCAT, "======write======" + e.toString());
+                        }
+                    }
+                }).start();
+            }
+        }
+
         public void close() {
             if (serverSocket != null) {
                 try {
                     serverSocket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (socket != null) {
+                try {
+                    socket.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

@@ -49,7 +49,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 WifiP2pDevice result = mScanResultAdapter.getItem(position);
-                clientManager.connect(result);
+                clientManager.connect(result, 8988);
             }
         });
 
@@ -59,7 +59,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
             @Override
             public void onClick(View v) {
                 if (currentWifiP2pinfo != null) {
-                    clientManager.postData(currentWifiP2pinfo, 8988, "name=HUAWEI-1505-Plus;password=mash51505");
+                    clientManager.write( "name=HUAWEI-1505-Plus;password=mash51505".getBytes());
                 }
             }
         });
@@ -113,6 +113,11 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
     public void onDisconnection() {
         currentWifiP2pinfo = null;
         msgView.setText("已失去连接");
+    }
+
+    @Override
+    public void onDataReceive(byte[] data, int length) {
+        msgView.setText(new String(data));
     }
 
     /*

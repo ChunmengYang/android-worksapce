@@ -12,10 +12,12 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.Socket;
 import java.util.Collection;
@@ -37,6 +39,9 @@ public class WifiDirectClientManager {
 
         // Wi-Fi P2P 连接丢失
         void onDisconnection();
+
+        // Wi-Fi P2P 连接后，接收收到数据
+        void onDataReceive(byte[] data, int length);
     }
 
     private Context context;
@@ -47,6 +52,11 @@ public class WifiDirectClientManager {
 
     private IntentFilter wifiP2pStateAndConnectFilter = new IntentFilter();
     private IntentFilter wifiP2pPeersFilter = new IntentFilter();
+
+    private Handler mHandler = new Handler();
+
+    private ClientAsyncTask asyncTask;
+    private int port;
 
     public WifiDirectClientManager(Context context, WifiDirectClientManager.ActionListener actionListener) {
         this.context = context;
@@ -67,6 +77,13 @@ public class WifiDirectClientManager {
 
         // 注册Wi-Fi可用状态及连接状态接收器
         context.registerReceiver(wifiP2pStateAndConnectReceiver, wifiP2pStateAndConnectFilter);
+    }
+
+    private Boolean isWifiP2pEnabled = false;
+
+    private void setIsWifiP2pEnabled(Boolean state) {
+        isWifiP2pEnabled = state;
+        actionListener.onWifiP2pEnabled(isWifiP2pEnabled);
     }
 
     private Boolean isDiscovering = false;
@@ -121,7 +138,7 @@ public class WifiDirectClientManager {
     /*
      * 连接Wi-Fi P2P设备
      */
-    public void connect(final WifiP2pDevice device) {
+    public void connect(final WifiP2pDevice device, int port) {
         if (!isWifiP2pEnabled) return;
 
         if (device == null) return;
@@ -130,6 +147,7 @@ public class WifiDirectClientManager {
             cancelConnect();
         }
 
+        this.port = port;
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
@@ -156,6 +174,13 @@ public class WifiDirectClientManager {
 
         if (!isConnected) return;
 
+        // 关闭数据Socket
+        if (asyncTask != null) {
+            asyncTask.cancel(true);
+            asyncTask.close();
+            asyncTask = null;
+        }
+
         mWifiP2pManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
 
             @Override
@@ -173,11 +198,11 @@ public class WifiDirectClientManager {
     /*
      * 发送数据
      */
-    public void postData(WifiP2pInfo info, int port, String data) {
+    public void write(byte [] data) {
         if (!isWifiP2pEnabled) return;
 
-        if (isConnected && info != null && port > 0 && data != null) {
-            new ClientAsyncTask(WifiDirectClientManager.this, info.groupOwnerAddress.getHostAddress(), port).execute(data);
+        if (isConnected && asyncTask != null) {
+            asyncTask.write(data);
         }
     }
 
@@ -202,16 +227,13 @@ public class WifiDirectClientManager {
         this.actionListener = null;
     }
 
-    private Boolean isWifiP2pEnabled = false;
-
-    private void setIsWifiP2pEnabled(Boolean state) {
-        isWifiP2pEnabled = state;
-        actionListener.onWifiP2pEnabled(isWifiP2pEnabled);
-    }
-
     private void setConnectSuccess(final WifiP2pInfo info) {
         isConnected = true;
         stopDiscover();
+
+        // 开启数据Socket
+        asyncTask = new ClientAsyncTask(WifiDirectClientManager.this, info.groupOwnerAddress.getHostAddress(), this.port);
+        asyncTask.execute();
 
         actionListener.onConnection(info);
         new Thread() {
@@ -227,6 +249,7 @@ public class WifiDirectClientManager {
         actionListener.onDisconnection();
         Log.d(LCAT, "=========与P2P设备已断开连接=========");
     }
+
 
     /*
      * Wi-Fi P2P可用状态接收器
@@ -297,13 +320,19 @@ public class WifiDirectClientManager {
         }
     };
 
+    private void setData(byte[] data, int length) {
+        actionListener.onDataReceive(data, length);
+    }
+
     private void dataCompleted() {
         // 数据发送完成
     }
 
-    private static class ClientAsyncTask extends AsyncTask<String, Void, Void> {
+    private static class ClientAsyncTask extends AsyncTask<Void, Void, Void> {
 
         WeakReference<WifiDirectClientManager> weakReference;
+
+        private Socket socket;
         private String ipAddress;
         private int port;
 
@@ -321,19 +350,13 @@ public class WifiDirectClientManager {
         }
 
         @Override
-        protected Void doInBackground(String... params) {
+        protected Void doInBackground(Void... params) {
             try {
                 try {
-                    Socket socket = new Socket(this.ipAddress, this.port);
+                    socket = new Socket(this.ipAddress, this.port);
 
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                            socket.getOutputStream()));
+                    read(socket.getInputStream());
 
-                    writer.write(params[0]);
-                    writer.flush();
-                    writer.close();
-
-                    socket.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -341,6 +364,58 @@ public class WifiDirectClientManager {
                 Log.e(LCAT, e.getMessage());
             }
             return null;
+        }
+
+        private void read(InputStream inputStream) {
+            try {
+                byte buffer[] = new byte[1024 * 4];
+                int temp = 0;
+                // 从InputStream当中读取客户端所发送的数据
+                while ((temp = inputStream.read(buffer)) != -1) {
+                    final byte[] data = buffer;
+                    final int length = temp;
+                    if (weakReference.get() != null) {
+                        weakReference.get().mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                weakReference.get().setData(data, length);
+                            }
+                        });
+                    }
+                }
+                inputStream.close();
+            } catch (IOException e) {
+                Log.e(LCAT, "======read======" + e.toString());
+            }
+        }
+
+        public void write(final byte[] data) {
+            if (socket != null) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (socket.isConnected()) {
+                                OutputStream out = socket.getOutputStream();
+                                out.write(data);
+                                out.flush();
+                            }
+                        } catch (Exception e) {
+                            Log.e(LCAT, "======write======" + e.toString());
+                        }
+                    }
+                }).start();
+            }
+        }
+
+        public void close() {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         @Override
