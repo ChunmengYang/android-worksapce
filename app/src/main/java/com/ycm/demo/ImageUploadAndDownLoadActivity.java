@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -332,11 +333,16 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
      * 保存图片到服务器
      */
     private void saveBitmapToServer(File file) {
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client =  new OkHttpClient.Builder()
+                .addInterceptor(new LoggingInterceptor())
+                .connectTimeout(10,  TimeUnit.SECONDS)
+                .writeTimeout(20,  TimeUnit.SECONDS)
+                .build();
+
         MediaType mediaType = MediaType.parse("image/png; charset=utf-8");
 
         Request request = new Request.Builder()
-                .url("http://192.168.1.9:9090/mms/user/icon/uploadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
+                .url("http://192.168.3.112:9090/mms/user/icon/uploadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
                 .post(RequestBody.create(mediaType, file))
                 .build();
 
@@ -405,11 +411,13 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
     private void getBitmapFromServer(){
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(new LoggingInterceptor())
+                .connectTimeout(10,  TimeUnit.SECONDS)
+                .readTimeout(20,  TimeUnit.SECONDS)
                 .build();
 
 
         Request request = new Request.Builder()
-                .url("http://192.168.1.9:9090/mms/user/icon/downloadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
+                .url("http://192.168.3.112:9090/mms/user/icon/downloadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
