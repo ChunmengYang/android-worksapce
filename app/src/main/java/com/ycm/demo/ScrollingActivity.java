@@ -192,4 +192,12 @@ public class ScrollingActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    protected void onDestroy() {
+        mBookDatabase.close();
+        mBookDatabase = null;
+
+        super.onDestroy();
+    }
 }

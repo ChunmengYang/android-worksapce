@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -20,17 +21,34 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements View.OnClickListener {
+    private static final String LCAT = "ImageUploadAndDownLoadActivity";
 
     private ImageView imageView;
     private Button caremaBtn;
@@ -47,6 +65,12 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
     private static final String PHOTO_CROP_FILE_NAME = "temp_crop_photo.jpg";
     private File tempCropFile;
 
+
+    private static final String PHOTO_DOWNLOAD_FILE_NAME = "temp_download_photo.jpg";
+    private File tempDownloadFile;
+
+    private Handler mHandler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +85,7 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
         galleryBtn.setOnClickListener(this);
 
         getBitmapFromSharedPreferences();
+        getBitmapFromServer();
     }
 
     @Override
@@ -221,6 +246,8 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
                 imageView.setImageBitmap(bitmap);
                 //保存到SharedPreferences
                 saveBitmapToSharedPreferences(bitmap);
+                //保存到服务器
+                saveBitmapToServer(tempCropFile);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -299,6 +326,55 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("USER_ICON", imageString);
         editor.commit();
+
+    }
+    /*
+     * 保存图片到服务器
+     */
+    private void saveBitmapToServer(File file) {
+        OkHttpClient client = new OkHttpClient();
+        MediaType mediaType = MediaType.parse("image/png; charset=utf-8");
+
+        Request request = new Request.Builder()
+                .url("http://192.168.1.9:9090/mms/user/icon/uploadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
+                .post(RequestBody.create(mediaType, file))
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ImageUploadAndDownLoadActivity.this, "上传头像失败", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response.isSuccessful()){
+                    //回调的方法执行在子线程。
+                    ResponseBody responseBody = response.body();
+                    try {
+                        JSONObject result = new JSONObject(responseBody.string());
+                        final boolean  success = result.optBoolean("success");
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (success) {
+                                    Toast.makeText(ImageUploadAndDownLoadActivity.this, "上传头像成功", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(ImageUploadAndDownLoadActivity.this, "上传头像失败", Toast.LENGTH_LONG).show();
+                                }
+
+                            }
+                        });
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 
     /*
@@ -317,10 +393,146 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(byteArray);
 
             //第三步:利用ByteArrayInputStream生成Bitmap
-            Bitmap bitmap= BitmapFactory.decodeStream(byteArrayInputStream);
+            Bitmap bitmap = BitmapFactory.decodeStream(byteArrayInputStream);
             imageView.setImageBitmap(bitmap);
         }
 
     }
 
+    /*
+     * 从服务器获取图片
+     */
+    private void getBitmapFromServer(){
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(new LoggingInterceptor())
+                .build();
+
+
+        Request request = new Request.Builder()
+                .url("http://192.168.1.9:9090/mms/user/icon/downloadbyim?session=zutM4HuDH3httArf3EdSv95fwfZzc4wa")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ImageUploadAndDownLoadActivity.this, "获取头像失败", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response.isSuccessful()){
+                    //回调的方法执行在子线程。
+//                    final long startTime = System.nanoTime();
+
+//                    InputStream is = response.body().byteStream();
+//                    tempDownloadFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), PHOTO_DOWNLOAD_FILE_NAME);
+//                    try {
+//                        if(tempDownloadFile.exists()){
+//                            tempDownloadFile.delete();
+//                        }
+//                        tempDownloadFile.createNewFile();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//
+//                    FileOutputStream fos = new FileOutputStream(tempDownloadFile);
+//                    byte[] buf = new byte[2048];
+//                    int len = 0;
+//                    while ((len = is.read(buf)) != -1) {
+//                        fos.write(buf, 0, len);
+//                    }
+//                    fos.flush();
+//                    fos.close();
+//                    fos = null;
+//
+//                    final Bitmap bitmap = BitmapFactory.decodeFile(tempDownloadFile.getAbsolutePath());
+//                    mHandler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//
+//                            if (bitmap.getByteCount() > 0) {
+//                                imageView.setImageBitmap(bitmap);
+//                                long endTime = System.nanoTime();
+//                                Log.d(LCAT, String.format("Show Image in %.1fms", (endTime - startTime) / 1e6d));
+//                            }
+//                        }
+//                    });
+
+                    byte[] data = null;
+                    try {
+                        data = readStream(response.body().byteStream());
+                    }  catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    if (data != null) {
+                        final long startTime = System.nanoTime();
+                        final Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (bitmap.getByteCount() > 0) {
+                                    imageView.setImageBitmap(bitmap);
+                                    long endTime = System.nanoTime();
+                                    Log.d(LCAT, String.format("Show Image in %.1fms", (endTime - startTime) / 1e6d));
+                                }
+                            }
+                        });
+                    }
+
+//                    final Bitmap bitmap = BitmapFactory.decodeStream(response.body().byteStream());
+//                    mHandler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//
+//                            if (bitmap.getByteCount() > 0) {
+//                                imageView.setImageBitmap(bitmap);
+//                                long endTime = System.nanoTime();
+//                                Log.d(LCAT, String.format("Show Image in %.1fms", (endTime - startTime) / 1e6d));
+//                            }
+//                        }
+//                    });
+                }
+            }
+        });
+
+    }
+
+    public static byte[] readStream(InputStream inStream) throws Exception{
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        while( (len=inStream.read(buffer)) != -1){
+            outStream.write(buffer, 0, len);
+        }
+        outStream.close();
+        inStream.close();
+        return outStream.toByteArray();
+    }
+
+    class LoggingInterceptor implements Interceptor {
+        private static final String TAG = "ImageUploadAndDownLoadActivity";
+
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+
+            long startTime = System.nanoTime();
+            Log.d(TAG, String.format("Sending request %s on %s%n%s",
+                    request.url(), chain.connection(), request.headers()));
+
+            Response response =  chain.proceed(request);
+
+            long endTime = System.nanoTime();
+            Log.d(TAG, String.format("Received response for %s in %.1fms%n%s",
+                    response.request().url(), (endTime - startTime) / 1e6d, response.headers()));
+
+            return response;
+        }
+    }
 }

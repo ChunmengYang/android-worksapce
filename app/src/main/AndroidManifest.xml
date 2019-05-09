@@ -97,11 +97,11 @@
             android:name="com.ycm.webserver.WebServerService"
             android:exported="false" />
 
-        <activity android:name=".WifiActivity" />
-        <activity android:name=".UdpBroadCastActivity" />
-        <activity android:name=".WifiDirectClientActivity" />
-        <activity android:name=".WifiDirectServerActivity" />
-        <activity android:name=".BluetoothActivity"></activity>
+        <activity android:name=".WifiActivity" android:label="Wi-Fi管理" />
+        <activity android:name=".UdpBroadCastActivity" android:label="UDP多路广播"/>
+        <activity android:name=".WifiDirectClientActivity" android:label="Wi-Fi P2P客户端"/>
+        <activity android:name=".WifiDirectServerActivity" android:label="Wi-Fi P2P服务端"/>
+        <activity android:name=".BluetoothActivity" android:label="蓝牙连接" />
     </application>
 
 </manifest>

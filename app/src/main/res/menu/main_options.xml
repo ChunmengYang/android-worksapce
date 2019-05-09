@@ -11,14 +11,19 @@
         android:title="@string/main_list_popup" />
 
     <item
-    android:id="@+id/main_options_image_upload_and_download"
-    android:icon="@drawable/ic_image_24dp"
-    android:title="@string/main_image_upload_and_download" />
+        android:id="@+id/main_options_image_upload_and_download"
+        android:icon="@drawable/ic_image_24dp"
+        android:title="@string/main_image_upload_and_download" />
 
     <item
         android:id="@+id/main_options_ble"
         android:icon="@drawable/ic_ble_24dp"
         android:title="@string/main_ble" />
+
+    <item
+        android:id="@+id/main_options_bluetooth"
+        android:icon="@drawable/ic_ble_24dp"
+        android:title="Bluetooth" />
 
     <item
         android:id="@+id/main_webserver"

@@ -24,7 +24,6 @@ public class BookDatabase {
         contentValues.put("desc", desc);
         contentValues.put("cover", cover);
         long status = database.insert(MySQLiteHelper.TABLE_BOOK, null, contentValues);
-        database.close();
         return  status;
     }
 
@@ -33,7 +32,6 @@ public class BookDatabase {
         ContentValues contentValues = new ContentValues();
         contentValues.put("cover", cover);
         long status = database.update(MySQLiteHelper.TABLE_BOOK, contentValues, "id = ?", new String[id]);
-        database.close();
         return  status;
     }
 
@@ -63,13 +61,15 @@ public class BookDatabase {
 
             results.add(new Book(id, name, desc, bmpout));
         }
-        database.close();
         return results;
     }
 
     public void clear() {
         SQLiteDatabase database = mMySQLiteHelper.getWritableDatabase();
         database.delete(MySQLiteHelper.TABLE_BOOK, null, null);
-        database.close();
+    }
+
+    public void close() {
+        mMySQLiteHelper.close();
     }
 }

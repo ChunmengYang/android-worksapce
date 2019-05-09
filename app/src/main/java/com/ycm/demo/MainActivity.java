@@ -129,8 +129,12 @@ public class MainActivity extends AppCompatActivity {
                 Intent imageIntent = new Intent(MainActivity.this, ImageUploadAndDownLoadActivity.class);
                 startActivity(imageIntent);
                 break;
+            case R.id.main_options_bluetooth:
+                Intent bluetoothIntent = new Intent(MainActivity.this, BluetoothActivity.class);
+                startActivity(bluetoothIntent);
+                break;
             case R.id.main_options_ble:
-                Intent bleIntent = new Intent(MainActivity.this, BluetoothActivity.class);
+                Intent bleIntent = new Intent(MainActivity.this, BLEActivity.class);
                 startActivity(bleIntent);
                 break;
             case R.id.main_webserver:
