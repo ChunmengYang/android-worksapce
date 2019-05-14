@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
@@ -14,20 +13,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.ListPopupWindow;
 import android.widget.TextView;
 
+import com.ycm.demo.ui.login.LoginActivity;
 import com.ycm.webserver.WebServerActivity;
 import com.ycm.zxinglibrary.android.Intents;
 import com.ycm.zxinglibrary.common.Constant;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String LCAT = "MainActivity";
 
     private TextView mTextMessage;
 
@@ -100,26 +98,29 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.main_options_list_popup:
-                final ListPopupWindow mListPop = new ListPopupWindow(this);
-                List<MyMenu> lists = new ArrayList<MyMenu>();
-                lists.add(new MyMenu(R.drawable.ic_scan_qrcode_24dp, getResources().getString(R.string.main_scan_qrcode)));
-                lists.add(new MyMenu(R.drawable.ic_scan_beacons_24dp, getResources().getString(R.string.main_scan_beacons)));
+                Intent signInIntent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(signInIntent);
 
-                mListPop.setAdapter(new MyArrayAdapter(this, R.layout.my_menu, lists));
-                mListPop.setWidth(ConstraintLayout.LayoutParams.WRAP_CONTENT);
-                mListPop.setHeight(ConstraintLayout.LayoutParams.WRAP_CONTENT);
-                mListPop.setAnchorView(mTextMessage);
-                mListPop.setModal(true);
-
-                mListPop.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view,
-                                            int position, long id) {
-                        mTextMessage.setText(String.valueOf(position));
-                        mListPop.dismiss();
-                    }
-                });
-                mListPop.show();
+//                final ListPopupWindow mListPop = new ListPopupWindow(this);
+//                List<MyMenu> lists = new ArrayList<MyMenu>();
+//                lists.add(new MyMenu(R.drawable.ic_scan_qrcode_24dp, getResources().getString(R.string.main_scan_qrcode)));
+//                lists.add(new MyMenu(R.drawable.ic_scan_beacons_24dp, getResources().getString(R.string.main_scan_beacons)));
+//
+//                mListPop.setAdapter(new MyArrayAdapter(this, R.layout.my_menu, lists));
+//                mListPop.setWidth(ConstraintLayout.LayoutParams.WRAP_CONTENT);
+//                mListPop.setHeight(ConstraintLayout.LayoutParams.WRAP_CONTENT);
+//                mListPop.setAnchorView(mTextMessage);
+//                mListPop.setModal(true);
+//
+//                mListPop.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                    @Override
+//                    public void onItemClick(AdapterView<?> parent, View view,
+//                                            int position, long id) {
+//                        mTextMessage.setText(String.valueOf(position));
+//                        mListPop.dismiss();
+//                    }
+//                });
+//                mListPop.show();
                 break;
             case R.id.main_options_scrolling:
                 Intent scrollingIntent = new Intent(MainActivity.this, ScrollingActivity.class);

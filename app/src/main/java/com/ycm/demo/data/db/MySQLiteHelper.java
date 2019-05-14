@@ -1,13 +1,21 @@
-package com.ycm.demo.db;
+package com.ycm.demo.data.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class MySQLiteHelper extends SQLiteOpenHelper {
-    public static final String DB_NAME = "books.db";
+    public static final String DB_NAME = "demo.db";
 
     public static final int DB_VERSION = 1;
+
+    public static final String TABLE_SESSION = "session";
+    private static final String SESSION_CREATE_TABLE_SQL = "create table " + TABLE_SESSION + "("
+            + "id INTEGER not null,"
+            + "account_id INTEGER not null,"
+            + "sign TEXT not null,"
+            + "create_time TEXT not null"
+            + ");";
 
     public static final String TABLE_BOOK = "book";
     private static final String BOOK_CREATE_TABLE_SQL = "create table " + TABLE_BOOK + "("
@@ -24,6 +32,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        db.execSQL(SESSION_CREATE_TABLE_SQL);
         db.execSQL(BOOK_CREATE_TABLE_SQL);
     }
 

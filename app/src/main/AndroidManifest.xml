@@ -3,28 +3,18 @@
     package="com.ycm.demo">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- 蓝牙管理 -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <!-- 蓝牙操作权限 -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <!-- 只支持拥有BLE的设备上运行 -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- 蓝牙管理 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" /> <!-- 蓝牙操作权限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- 只支持拥有BLE的设备上运行 -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
-        android:required="true" />
-
-    <!-- 在有些机型上需要获取位置信息才能扫描到蓝牙设备，此权限在api23+需要动态申请 -->
+        android:required="true" /> <!-- 在有些机型上需要获取位置信息才能扫描到蓝牙设备，此权限在api23+需要动态申请 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <!-- Wi-Fi -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- Wi-Fi -->
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-    <!-- 扫描二维码(zxing) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /> <!-- 扫描二维码(zxing) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
 
@@ -44,6 +34,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".ui.login.LoginActivity"
+            android:label="@string/title_activity_login"></activity>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name">
@@ -97,11 +90,21 @@
             android:name="com.ycm.webserver.WebServerService"
             android:exported="false" />
 
-        <activity android:name=".WifiActivity" android:label="Wi-Fi管理" />
-        <activity android:name=".UdpBroadCastActivity" android:label="UDP多路广播"/>
-        <activity android:name=".WifiDirectClientActivity" android:label="Wi-Fi P2P客户端"/>
-        <activity android:name=".WifiDirectServerActivity" android:label="Wi-Fi P2P服务端"/>
-        <activity android:name=".BluetoothActivity" android:label="蓝牙连接" />
-    </application>
+        <activity
+            android:name=".WifiActivity"
+            android:label="Wi-Fi管理" />
+        <activity
+            android:name=".UdpBroadCastActivity"
+            android:label="UDP多路广播" />
+        <activity
+            android:name=".WifiDirectClientActivity"
+            android:label="Wi-Fi P2P客户端" />
+        <activity
+            android:name=".WifiDirectServerActivity"
+            android:label="Wi-Fi P2P服务端" />
+        <activity
+            android:name=".BluetoothActivity"
+            android:label="蓝牙连接" />
 
+    </application>
 </manifest>

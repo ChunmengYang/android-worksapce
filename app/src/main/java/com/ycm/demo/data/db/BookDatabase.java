@@ -1,4 +1,4 @@
-package com.ycm.demo.db;
+package com.ycm.demo.data.db;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+
+import com.ycm.demo.data.model.Book;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,7 @@ public class BookDatabase {
 
             results.add(new Book(id, name, desc, bmpout));
         }
+        cursor.close();
         return results;
     }
 

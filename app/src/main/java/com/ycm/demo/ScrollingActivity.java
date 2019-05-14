@@ -15,8 +15,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ycm.demo.db.Book;
-import com.ycm.demo.db.BookDatabase;
+import com.ycm.demo.data.model.Book;
+import com.ycm.demo.data.db.BookDatabase;
 
 import java.io.IOException;
 import java.util.ArrayList;

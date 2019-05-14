@@ -1,4 +1,4 @@
-package com.ycm.demo.db;
+package com.ycm.demo.data.model;
 
 import android.graphics.Bitmap;
 
