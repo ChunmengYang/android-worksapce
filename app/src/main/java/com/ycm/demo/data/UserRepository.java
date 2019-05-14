@@ -18,6 +18,12 @@ public class UserRepository {
         void onError(String error);
     }
 
+    public interface LogoutListener {
+        void onSuccess();
+
+        void onError(String error);
+    }
+
     private static volatile UserRepository instance;
 
     private Context context;
@@ -47,16 +53,31 @@ public class UserRepository {
         return session != null;
     }
 
-    public void logout() {
-        session = null;
-
-        // 清理登录Session
-        SessionDatabase database = new SessionDatabase(context);
-        database.clear();
-        database.close();
+    public void logout(final LogoutListener listener) {
+        if (session == null) {
+            listener.onSuccess();
+            return;
+        }
 
         // 登出
-        dataSource.logout();
+        dataSource.logout(session.getSign(), new UserDataSource.LogoutListener() {
+            @Override
+            public void onSuccess() {
+                // 清理登录Session
+                SessionDatabase database = new SessionDatabase(context);
+                database.clear();
+                database.close();
+
+                session = null;
+
+                listener.onSuccess();
+            }
+
+            @Override
+            public void onError(String error) {
+                listener.onError(error);
+            }
+        });
     }
 
     public Session getSession() {

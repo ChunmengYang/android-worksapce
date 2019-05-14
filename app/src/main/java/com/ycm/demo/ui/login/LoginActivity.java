@@ -34,6 +34,7 @@ public class LoginActivity extends AppCompatActivity {
         final EditText usernameEditText = findViewById(R.id.login_username);
         final EditText passwordEditText = findViewById(R.id.login_password);
         final Button loginButton = findViewById(R.id.login_btn);
+        final Button logoutButton = findViewById(R.id.logout_btn);
         final ProgressBar loadingProgressBar = findViewById(R.id.login_loading);
 
         loginViewModel.getLoginFormState().observe(this, new Observer<LoginFormState>() {
@@ -60,10 +61,30 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 loadingProgressBar.setVisibility(View.GONE);
                 if (loginResult.getError() != null) {
-                    showLoginFailed(loginResult.getError());
+                    showFailed(loginResult.getError());
                 }
                 if (loginResult.getSuccess() != null) {
-                    updateUiWithUser(loginResult.getSuccess());
+                    showLoginSuccess(loginResult.getSuccess());
+                }
+                setResult(Activity.RESULT_OK);
+
+                //Complete and destroy login activity once successful
+                finish();
+            }
+        });
+
+        loginViewModel.getLogoutResult().observe(this, new Observer<LogoutResult>() {
+            @Override
+            public void onChanged(@Nullable LogoutResult logoutResult) {
+                if (logoutResult == null) {
+                    return;
+                }
+                loadingProgressBar.setVisibility(View.GONE);
+                if (logoutResult.getError() != null) {
+                    showFailed(logoutResult.getError());
+                }
+                if (logoutResult.getSuccess()) {
+                    showLogoutSuccess();
                 }
                 setResult(Activity.RESULT_OK);
 
@@ -111,20 +132,30 @@ public class LoginActivity extends AppCompatActivity {
                         passwordEditText.getText().toString());
             }
         });
-
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadingProgressBar.setVisibility(View.VISIBLE);
+                loginViewModel.logout();
+            }
+        });
 
         if (loginViewModel.isLoggedIn()) {
-            updateUiWithUser(loginViewModel.getSession());
+            showLoginSuccess(loginViewModel.getSession());
+            logoutButton.setEnabled(true);
         }
     }
 
-    private void updateUiWithUser(Session session) {
+    private void showLoginSuccess(Session session) {
         String welcome = getString(R.string.welcome) + "===AccountId: " + String.valueOf(session.getId()) + "===Sign: " + session.getSign();
-        // TODO : initiate successful logged in experience
         Toast.makeText(getApplicationContext(), welcome, Toast.LENGTH_LONG).show();
     }
 
-    private void showLoginFailed(String error) {
+    private void showLogoutSuccess() {
+        Toast.makeText(getApplicationContext(), "Logout Success", Toast.LENGTH_LONG).show();
+    }
+
+    private void showFailed(String error) {
         Toast.makeText(getApplicationContext(), error, Toast.LENGTH_SHORT).show();
     }
 }

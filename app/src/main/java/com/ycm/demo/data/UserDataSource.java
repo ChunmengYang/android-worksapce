@@ -33,6 +33,12 @@ public class UserDataSource {
         void onError(String error);
     }
 
+    public interface LogoutListener {
+        void onSuccess();
+
+        void onError(String error);
+    }
+
     private Handler mHandler = new Handler();
 
     public void login(String username, String password, final LoginListener listener) {
@@ -124,7 +130,68 @@ public class UserDataSource {
         });
     }
 
-    public void logout() {
-        // TODO: revoke authentication
+    public void logout(String sign, final LogoutListener listener) {
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(3000, TimeUnit.MILLISECONDS)
+                .writeTimeout(5000, TimeUnit.MILLISECONDS)
+                .readTimeout(4000, TimeUnit.MILLISECONDS)
+                .build();
+
+        RequestBody requestBody = new FormBody.Builder()
+                .addEncoded("session", sign)
+                .build();
+
+        Request request = new Request.Builder()
+                .url("http://192.168.3.112:9090/mms/account/logout")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, final IOException e) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onError(e.getMessage());
+                    }
+                });
+                Log.d(TAG, "onFailure: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseText = response.body().string();
+                Log.d(TAG, "onResponse: " + responseText);
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject result = new JSONObject(responseText);
+                        boolean  success = result.optBoolean("success");
+                        if (success) {
+
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onSuccess();
+                                }
+                            });
+
+                        } else {
+                            final String error = result.optString("error");
+
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onError(error);
+                                }
+                            });
+
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 }

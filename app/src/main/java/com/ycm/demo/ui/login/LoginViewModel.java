@@ -14,6 +14,8 @@ public class LoginViewModel extends AndroidViewModel {
 
     private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
     private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+    private MutableLiveData<LogoutResult> logoutResult = new MutableLiveData<>();
+
     private UserRepository userRepository;
 
     LoginViewModel(Application application) {
@@ -27,6 +29,10 @@ public class LoginViewModel extends AndroidViewModel {
 
     LiveData<LoginResult> getLoginResult() {
         return loginResult;
+    }
+
+    LiveData<LogoutResult> getLogoutResult() {
+        return logoutResult;
     }
 
     public boolean isLoggedIn() {
@@ -48,6 +54,20 @@ public class LoginViewModel extends AndroidViewModel {
             @Override
             public void onError(String error) {
                 loginResult.setValue(new LoginResult(error));
+            }
+        });
+    }
+
+    public void logout() {
+        userRepository.logout(new UserRepository.LogoutListener() {
+            @Override
+            public void onSuccess() {
+                logoutResult.setValue(new LogoutResult(true));
+            }
+
+            @Override
+            public void onError(String error) {
+                logoutResult.setValue(new LogoutResult(error));
             }
         });
     }
