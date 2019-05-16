@@ -3,6 +3,7 @@ package com.ycm.demo.ui.login;
 import android.app.Activity;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -13,12 +14,14 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ycm.demo.R;
 import com.ycm.demo.data.model.Session;
+import com.ycm.demo.data.model.User;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -34,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
         final EditText usernameEditText = findViewById(R.id.login_username);
         final EditText passwordEditText = findViewById(R.id.login_password);
         final Button loginButton = findViewById(R.id.login_btn);
+        final ImageView iconView = findViewById(R.id.login_user_icon);
         final Button logoutButton = findViewById(R.id.logout_btn);
         final ProgressBar loadingProgressBar = findViewById(R.id.login_loading);
 
@@ -93,6 +97,29 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        loginViewModel.getLoginUser().observe(this, new Observer<User>() {
+            @Override
+            public void onChanged(@Nullable User user) {
+                Toast.makeText(getApplicationContext(), user.getUserName(), Toast.LENGTH_LONG).show();
+            }
+        });
+
+        loginViewModel.getLoginUserIcon().observe(this, new Observer<Bitmap>() {
+            @Override
+            public void onChanged(@Nullable Bitmap bitmap) {
+                if (bitmap != null) {
+                    iconView.setImageBitmap(bitmap);
+                }
+            }
+        });
+
+        loginViewModel.getErrorMsg().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(@Nullable String s) {
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
+            }
+        });
+
         TextWatcher afterTextChangedListener = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -142,7 +169,22 @@ public class LoginActivity extends AppCompatActivity {
 
         if (loginViewModel.isLoggedIn()) {
             showLoginSuccess(loginViewModel.getSession());
-            logoutButton.setEnabled(true);
+
+            usernameEditText.setVisibility(View.GONE);
+            passwordEditText.setVisibility(View.GONE);
+            loginButton.setVisibility(View.GONE);
+
+            iconView.setVisibility(View.VISIBLE);
+            logoutButton.setVisibility(View.VISIBLE);
+            loginViewModel.queryUserInfo();
+            loginViewModel.queryUserIcon();
+        } else {
+            iconView.setVisibility(View.GONE);
+            logoutButton.setVisibility(View.GONE);
+
+            usernameEditText.setVisibility(View.VISIBLE);
+            passwordEditText.setVisibility(View.VISIBLE);
+            loginButton.setVisibility(View.VISIBLE);
         }
     }
 

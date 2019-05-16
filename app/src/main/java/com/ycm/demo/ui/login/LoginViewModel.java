@@ -4,17 +4,24 @@ import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
+import android.graphics.Bitmap;
 import android.util.Patterns;
 
 import com.ycm.demo.R;
 import com.ycm.demo.data.UserRepository;
 import com.ycm.demo.data.model.Session;
+import com.ycm.demo.data.model.User;
 
 public class LoginViewModel extends AndroidViewModel {
 
     private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
     private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
     private MutableLiveData<LogoutResult> logoutResult = new MutableLiveData<>();
+
+    private MutableLiveData<User> loginUser = new MutableLiveData<>();
+    private MutableLiveData<Bitmap> loginUserIcon = new MutableLiveData<>();
+
+    private MutableLiveData<String> errorMsg = new MutableLiveData<>();
 
     private UserRepository userRepository;
 
@@ -34,6 +41,19 @@ public class LoginViewModel extends AndroidViewModel {
     LiveData<LogoutResult> getLogoutResult() {
         return logoutResult;
     }
+
+    LiveData<User> getLoginUser() {
+        return loginUser;
+    }
+
+    LiveData<Bitmap> getLoginUserIcon() {
+        return loginUserIcon;
+    }
+
+    LiveData<String> getErrorMsg() {
+        return errorMsg;
+    }
+
 
     public boolean isLoggedIn() {
         return userRepository.isLoggedIn();
@@ -68,6 +88,34 @@ public class LoginViewModel extends AndroidViewModel {
             @Override
             public void onError(String error) {
                 logoutResult.setValue(new LogoutResult(error));
+            }
+        });
+    }
+
+    public void queryUserInfo() {
+        userRepository.getUserInfo(new UserRepository.UserInfoListener() {
+            @Override
+            public void onSuccess(User user) {
+                loginUser.setValue(user);
+            }
+
+            @Override
+            public void onError(String error) {
+                errorMsg.setValue(error);
+            }
+        });
+    }
+
+    public void queryUserIcon() {
+        userRepository.getUserIcon(new UserRepository.UserIconListener() {
+            @Override
+            public void onSuccess(Bitmap icon) {
+                loginUserIcon.setValue(icon);
+            }
+
+            @Override
+            public void onError(String error) {
+                errorMsg.setValue(error);
             }
         });
     }

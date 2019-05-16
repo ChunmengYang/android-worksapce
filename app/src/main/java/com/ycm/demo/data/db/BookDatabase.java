@@ -33,7 +33,7 @@ public class BookDatabase {
         SQLiteDatabase database = mMySQLiteHelper.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("cover", cover);
-        long status = database.update(MySQLiteHelper.TABLE_BOOK, contentValues, "id = ?", new String[id]);
+        long status = database.update(MySQLiteHelper.TABLE_BOOK, contentValues, "id = ?", new String[]{String.valueOf(id)});
         return  status;
     }
 

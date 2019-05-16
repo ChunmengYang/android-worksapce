@@ -31,7 +31,7 @@ public class SessionDatabase {
         contentValues.put("account_id", session.getAccountId());
         contentValues.put("sign", session.getSign());
         contentValues.put("create_time", session.getCreateTime());
-        long status = database.update(MySQLiteHelper.TABLE_SESSION, contentValues, "id = ?", new String[session.getId()]);
+        long status = database.update(MySQLiteHelper.TABLE_SESSION, contentValues, "id = ?", new String[]{String.valueOf(session.getId())});
         return  status;
     }
 

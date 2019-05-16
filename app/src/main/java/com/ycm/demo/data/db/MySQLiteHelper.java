@@ -17,6 +17,18 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
             + "create_time TEXT not null"
             + ");";
 
+    public static final String TABLE_USER = "user";
+    private static final String USER_CREATE_TABLE_SQL = "create table " + TABLE_USER + "("
+            + "id INTEGER not null,"
+            + "account_id INTEGER not null,"
+            + "user_name TEXT not null,"
+            + "nick_name TEXT not null,"
+            + "sex INTEGER not null,"
+            + "icon BLOB,"
+            + "create_time TEXT not null,"
+            + "modify_time TEXT not null"
+            + ");";
+
     public static final String TABLE_BOOK = "book";
     private static final String BOOK_CREATE_TABLE_SQL = "create table " + TABLE_BOOK + "("
             + "id INTEGER primary key autoincrement,"
@@ -33,6 +45,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(SESSION_CREATE_TABLE_SQL);
+        db.execSQL(USER_CREATE_TABLE_SQL);
         db.execSQL(BOOK_CREATE_TABLE_SQL);
     }
 
