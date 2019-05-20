@@ -21,8 +21,6 @@ public class LoginViewModel extends AndroidViewModel {
     private MutableLiveData<User> loginUser = new MutableLiveData<>();
     private MutableLiveData<Bitmap> loginUserIcon = new MutableLiveData<>();
 
-    private MutableLiveData<String> errorMsg = new MutableLiveData<>();
-
     private UserRepository userRepository;
 
     LoginViewModel(Application application) {
@@ -49,11 +47,6 @@ public class LoginViewModel extends AndroidViewModel {
     LiveData<Bitmap> getLoginUserIcon() {
         return loginUserIcon;
     }
-
-    LiveData<String> getErrorMsg() {
-        return errorMsg;
-    }
-
 
     public boolean isLoggedIn() {
         return userRepository.isLoggedIn();
@@ -101,7 +94,7 @@ public class LoginViewModel extends AndroidViewModel {
 
             @Override
             public void onError(String error) {
-                errorMsg.setValue(error);
+
             }
         });
     }
@@ -115,7 +108,7 @@ public class LoginViewModel extends AndroidViewModel {
 
             @Override
             public void onError(String error) {
-                errorMsg.setValue(error);
+
             }
         });
     }
