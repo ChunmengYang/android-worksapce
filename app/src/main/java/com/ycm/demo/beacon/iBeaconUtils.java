@@ -3,6 +3,8 @@ package com.ycm.demo.beacon;
 import android.bluetooth.BluetoothDevice;
 
 public class iBeaconUtils {
+    private static String LCAT = "iBeaconUtils";
+
     public static iBeacon fromScanData(BluetoothDevice device, int rssi, byte[] scanData) {
 
         int startByte = 2;

@@ -4,6 +4,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
@@ -21,6 +25,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,40 +34,31 @@ import com.ycm.demo.beacon.iBeacon;
 import com.ycm.demo.beacon.iBeaconUtils;
 
 import java.lang.ref.WeakReference;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.UUID;
 
 public class BeaconActivity extends AppCompatActivity {
     private static final String LCAT = "BeaconActivity";
-    private static final int REQUEST_CODE_BLUETOOTH_ON = 1;
+    private static final int REQUEST_CODE_BLUETOOTH_ON_SCANNER = 1;
+    private static final int REQUEST_CODE_BLUETOOTH_ON_ADVERTISER = 2;
+
     private static final int REQUEST_CODE_ACCESS_COARSE_LOCATION = 1;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+
+    private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
+    private MyAdvertiseCallback mMyAdvertiseCallback;
+
     private BluetoothLeScanner mBluetoothLeScanner;
-    private BleScanCallback mBleScanCallback;
+    private MyScanCallback mMyScanCallback;
 
-    // 解析线程，解析Beacon数据
-    private FromScanDataThread mFromScanDataThread;
-    // 扫描结果队列，解析线程从中拿数据
-    private static java.util.PriorityQueue<ScanResult> queue = new PriorityQueue<ScanResult>(new Comparator<ScanResult>() {
-        @Override
-        public int compare(ScanResult o1, ScanResult o2) {
-            if(o1.getRssi() <= o2.getRssi()){
-                return 1;
-            }
-            else
-                return -1;
-        }
-    });
-
-    // Beacon的View，Key为Beacon的address
     private Map<String, BeaconView> beaconViews = new HashMap<String, BeaconView>();
 
     private TextView msgView;
+    private Button  advertiseBtn;
     private LinearLayout containerView;
 
     @Override
@@ -72,13 +68,23 @@ public class BeaconActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         msgView = findViewById(R.id.beacon_msg);
+        advertiseBtn = findViewById(R.id.beacon_advertise);
         containerView = findViewById(R.id.beacon_devices);
+
+        advertiseBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startAdvertising("FDA50693-A4E2-4FB1-AFCF-C6EB07647825", 5,1505,0);
+            }
+        });
+
+        startScan();
     }
 
-    private void initScanner() {
-        Log.d(LCAT, "Initializing Scanner");
-        msgView.setText("Initializing Scanner");
+    private void startScan() {
+        Log.d(LCAT, "=========Initializing Scanner=========");
 
+        msgView.setText("Initializing Scanner");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             //判断是否具有权限
             if (ContextCompat.checkSelfPermission(this,
@@ -98,54 +104,90 @@ public class BeaconActivity extends AppCompatActivity {
             }
         }
 
-        if (mBluetoothLeScanner == null) {
-            mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            mBluetoothAdapter = mBluetoothManager.getAdapter();
-            if (!mBluetoothAdapter.isEnabled()) {
-
-                Intent requestBluetoothOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                this.startActivityForResult(requestBluetoothOn, REQUEST_CODE_BLUETOOTH_ON);
-                return;
-
-//                boolean enable =  mBluetoothAdapter.enable();
-//                if (!enable) {
-//                    Toast.makeText(this, "打开蓝牙功能失败，请到'系统设置'中手动开启蓝牙功能！", Toast.LENGTH_LONG).show();
-//                    return;
-//                }
-            }
-            mBleScanCallback = new BleScanCallback();
-            mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-
-            mFromScanDataThread = new FromScanDataThread(BeaconActivity.this);
+        mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = mBluetoothManager.getAdapter();
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent requestBluetoothOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            this.startActivityForResult(requestBluetoothOn, REQUEST_CODE_BLUETOOTH_ON_SCANNER);
+            return;
         }
 
-        if (mFromScanDataThread != null) {
-            queue.clear();
-            mFromScanDataThread.start();
-        }
+        mMyScanCallback = new MyScanCallback(BeaconActivity.this);
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+
         if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner.startScan(mBleScanCallback);
+            mBluetoothLeScanner.startScan(mMyScanCallback);
+        }
+        msgView.setText("Scanning");
+
+        Log.d(LCAT, "=========Scanning=========");
+    }
+
+    public void stopScan() {
+        if (mBluetoothLeScanner != null) {
+            mBluetoothLeScanner.stopScan(mMyScanCallback);
+            Log.d(LCAT, "======Stop Scanning======");
         }
 
-        Log.d(LCAT, "Scanning");
-        msgView.setText("Scanning");
+        mBluetoothLeScanner = null;
+        mMyScanCallback = null;
+    }
+
+
+    public void startAdvertising(final String uuid, final int major, final int minor, int timeoutMillis) {
+        Log.d(LCAT, "=========Start Advertising=========");
+
+        mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = mBluetoothManager.getAdapter();
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent requestBluetoothOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            this.startActivityForResult(requestBluetoothOn, REQUEST_CODE_BLUETOOTH_ON_ADVERTISER);
+            return;
+        }
+
+        mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
+        mMyAdvertiseCallback = new MyAdvertiseCallback(BeaconActivity.this, uuid, major, minor);
+
+        mBluetoothLeAdvertiser.startAdvertising(
+                createAdvSettings(false, timeoutMillis),
+                createIBeaconAdvertiseData(UUID.fromString(uuid), (short) major, (short) minor, (byte) 0xc8),
+                mMyAdvertiseCallback);
+    }
+
+    public void stopAdvertising() {
+        if (mBluetoothLeAdvertiser != null) {
+            mBluetoothLeAdvertiser.stopAdvertising(mMyAdvertiseCallback);
+            Log.d(LCAT, "=========Stop Advertising=========");
+        }
+
+        mBluetoothLeAdvertiser = null;
+        mMyAdvertiseCallback = null;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // requestCode 与请求开启 Bluetooth 传入的 requestCode 相对应
-        if (requestCode == REQUEST_CODE_BLUETOOTH_ON) {
+        if (requestCode == REQUEST_CODE_BLUETOOTH_ON_SCANNER) {
             switch (resultCode) {
                 // 点击确认按钮
                 case Activity.RESULT_OK:
-                    Log.d(LCAT, "用户选择开启 Bluetooth，Bluetooth 会被开启");
-                    initScanner();
+                    startScan();
                     break;
                 // 点击取消按钮或点击返回键
                 case Activity.RESULT_CANCELED:
-                    Log.d(LCAT, "用户拒绝打开 Bluetooth, Bluetooth 不会被开启");
                     Toast.makeText(this, "需要打开蓝牙才可以搜索到信标！", Toast.LENGTH_LONG).show();
-                    finish();
+                    break;
+                default:
+                    break;
+            }
+        } else if (requestCode == REQUEST_CODE_BLUETOOTH_ON_ADVERTISER) {
+            switch (resultCode) {
+                // 点击确认按钮
+                case Activity.RESULT_OK:
+                    startAdvertising("FDA50693-A4E2-4FB1-AFCF-C6EB07647825", 5,1505,0);
+                    break;
+                // 点击取消按钮或点击返回键
+                case Activity.RESULT_CANCELED:
+                    Toast.makeText(this, "需要打开蓝牙才可以设置为信标！", Toast.LENGTH_LONG).show();
                     break;
                 default:
                     break;
@@ -153,80 +195,20 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE_ACCESS_COARSE_LOCATION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //用户允许改权限，0表示允许，-1表示拒绝 PERMISSION_GRANTED = 0， PERMISSION_DENIED = -1
-                //这里进行授权被允许的处理
-                initScanner();
+                // 用户允许改权限，0表示允许，-1表示拒绝 PERMISSION_GRANTED = 0， PERMISSION_DENIED = -1
+                // 这里进行授权被允许的处理
+                startScan();
             } else {
-                //permission denied, boo! Disable the functionality that depends on this permission.
-                //这里进行权限被拒绝的处理
+                // 这里进行权限被拒绝的处理
                 Toast.makeText(this, "需要打开位置权限才可以搜索到信标", Toast.LENGTH_LONG).show();
-                finish();
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
-    }
-
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        initScanner();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner.stopScan(mBleScanCallback);
-            Log.d(LCAT, "======Stop Scanning======");
-        }
-
-        if (mFromScanDataThread != null) {
-            mFromScanDataThread.setRunStatus(false);
-            Log.d(LCAT, "======Stop FromScanDataThread======");
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        mBluetoothManager = null;
-
-        if (mBluetoothAdapter!= null && mBluetoothAdapter.isEnabled()) {
-            mBluetoothAdapter.disable();
-        }
-        mBluetoothAdapter = null;
-
-        mBluetoothLeScanner = null;
-        mBleScanCallback = null;
-
-        mFromScanDataThread = null;
-
-        msgView = null;
-        containerView.removeAllViews();
-        containerView = null;
-
-        queue.clear();
-
-        beaconViews.clear();
-        beaconViews = null;
-
-        super.onDestroy();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     private void renderItem(String address, String uuid, String majorAndMinor) {
@@ -241,19 +223,138 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        mBluetoothManager = null;
+        mBluetoothAdapter = null;
+
+        stopAdvertising();
+        stopScan();
+
+        beaconViews.clear();
+        beaconViews = null;
+
+        msgView = null;
+        containerView.removeAllViews();
+        containerView = null;
+
+        super.onDestroy();
+    }
+
+    public static AdvertiseSettings createAdvSettings(boolean connectable, int timeoutMillis) {
+        AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
+        //设置广播的模式, 功耗相关
+        builder.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+        builder.setConnectable(connectable);
+        builder.setTimeout(timeoutMillis);
+        builder.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
+        AdvertiseSettings mAdvertiseSettings = builder.build();
+        if (mAdvertiseSettings == null) {
+            Log.e(LCAT, "==============mAdvertiseSettings is null==============");
+        }
+        return mAdvertiseSettings;
+    }
+
+    public static AdvertiseData createIBeaconAdvertiseData(UUID proximityUuid, short major, short minor, byte txPower) {
+        String[] uuidstr = proximityUuid.toString().replaceAll("-", "").toLowerCase().split("");
+        byte[] uuidBytes = new byte[16];
+        for (int i = 1, x = 0; i < uuidstr.length; x++) {
+            uuidBytes[x] = (byte) ((Integer.parseInt(uuidstr[i++], 16) << 4) | Integer.parseInt(uuidstr[i++], 16));
+        }
+        byte[] majorBytes = {(byte) (major >> 8), (byte) (major & 0xff)};
+        byte[] minorBytes = {(byte) (minor >> 8), (byte) (minor & 0xff)};
+        byte[] mPowerBytes = {txPower};
+        byte[] manufacturerData = new byte[0x17];
+        byte[] flagibeacon = {0x02, 0x15};
+
+        System.arraycopy(flagibeacon, 0x0, manufacturerData, 0x0, 0x2);
+        System.arraycopy(uuidBytes, 0x0, manufacturerData, 0x2, 0x10);
+        System.arraycopy(majorBytes, 0x0, manufacturerData, 0x12, 0x2);
+        System.arraycopy(minorBytes, 0x0, manufacturerData, 0x14, 0x2);
+        System.arraycopy(mPowerBytes, 0x0, manufacturerData, 0x16, 0x1);
+
+        AdvertiseData.Builder builder = new AdvertiseData.Builder();
+        builder.addManufacturerData(0x004c, manufacturerData);
+
+        AdvertiseData adv = builder.build();
+        return adv;
+    }
+
     /**
-     * api21+低功耗蓝牙接口回调，以下回调的方法可以根据需求去做相应的操作
+     * 广播回调类
      */
-    private static class BleScanCallback extends ScanCallback {
+    private static class MyAdvertiseCallback extends AdvertiseCallback {
+        WeakReference<BeaconActivity> weakReference;
+
+        private String uuid;
+        private int major;
+        private int minor;
+
+        public MyAdvertiseCallback(BeaconActivity activity, String uuid, int major, int minor) {
+            weakReference = new WeakReference<BeaconActivity>(activity);
+
+            this.uuid = uuid;
+            this.major = major;
+            this.minor = minor;
+        }
+
+        @Override
+        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+            super.onStartSuccess(settingsInEffect);
+            Log.d(LCAT, String.format("========UUID: %s, major: %d, minor: %d StartSuccess========", uuid, major, minor));
+
+            if (weakReference.get() != null) {
+                weakReference.get().msgView.setText(String.format("UUID: %s, \nmajor: %d, minor: %d \nStart Success", uuid, major, minor));
+            }
+        }
+
+        @Override
+        public void onStartFailure(int errorCode) {
+            // TODO Auto-generated method stub
+            super.onStartFailure(errorCode);
+            Log.d(LCAT, String.format("========UUID: %s, major: %d, minor: %d StartFailure, errorCode: %d========", uuid, major, minor, errorCode));
+            if (weakReference.get() != null) {
+                weakReference.get().msgView.setText(String.format("UUID: %s,\n major: %d, minor: %d \nStart Failure, errorCode: %d", uuid, major, minor, errorCode));
+            }
+        }
+    }
+
+    /**
+     * 扫描回调类
+     */
+    private static class MyScanCallback extends ScanCallback {
+        WeakReference<BeaconActivity> weakReference;
+
+        public MyScanCallback(BeaconActivity activity) {
+            weakReference = new WeakReference<BeaconActivity>(activity);
+        }
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             if (result == null) return;
+            Log.d(LCAT, "======ScanCallback======:" + result.getDevice().getAddress());
 
-            Log.d(LCAT, Thread.currentThread().getId() + "======BleScanCallback======:" + result.getDevice().getAddress());
-            synchronized (queue) {
-                queue.offer(result);
-                queue.notify();
+            iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
+
+            if(ibeacon != null && ibeacon.bluetoothAddress != null) {
+                final String address = ibeacon.bluetoothAddress;
+                final String uuid = ibeacon.proximityUuid;
+                final String majorAndMinor = "major:" + ibeacon.major + ", minor:" + ibeacon.minor + ", rssi:" + ibeacon.rssi;
+
+                Log.d(LCAT, "======ScanCallback======:" + uuid +"\n"+ majorAndMinor);
+                if (weakReference.get() != null) {
+                    weakReference.get().renderItem(address, uuid, majorAndMinor);
+                }
+
             }
         }
 
@@ -268,70 +369,9 @@ public class BeaconActivity extends AppCompatActivity {
         }
     }
 
-    private static class FromScanDataThread extends Thread {
-        WeakReference<BeaconActivity> weakReference;
-
-        FromScanDataThread(BeaconActivity activity) {
-            weakReference = new WeakReference<BeaconActivity>(activity);
-        }
-        private boolean runStatus = true;
-
-        public void  setRunStatus(boolean status) {
-            this.runStatus = status;
-            synchronized (queue) {
-                queue.clear();
-                queue.notify();
-            }
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                synchronized (queue) {
-                    while(queue.size() == 0 && this.runStatus) {
-                        try {
-                            queue.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                            queue.notify();
-                        }
-                    }
-
-                    if(queue.size() != 0) {
-                        ScanResult result = queue.poll();
-
-                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread======:" + result.getDevice().getAddress());
-
-                        iBeacon ibeacon = iBeaconUtils.fromScanData(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
-                        if(ibeacon != null && ibeacon.bluetoothAddress != null) {
-
-                            final String address = ibeacon.bluetoothAddress;
-                            final String uuid = ibeacon.proximityUuid;
-                            final String majorAndMinor = "major:" + ibeacon.major + ", minor:" + ibeacon.minor + ", rssi:" + ibeacon.rssi;
-
-                            if (weakReference.get() != null) {
-                                weakReference.get().runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread CallBack======:" + uuid +"\n"+ majorAndMinor);
-
-                                        weakReference.get().renderItem(address, uuid, majorAndMinor);
-                                    }
-                                });
-                            }
-
-                        }
-                    }
-                }
-
-                if(!this.runStatus){
-                    Log.d(LCAT, Thread.currentThread().getId() + "======FromScanDataThread End======");
-                    return;
-                }
-            }
-        }
-    }
-
+    /**
+     *  显示Beacon的类
+     */
     private static class BeaconView {
         ConstraintLayout itemLayout;
         TextView addressView;
