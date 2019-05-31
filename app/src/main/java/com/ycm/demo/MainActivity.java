@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -84,6 +85,48 @@ public class MainActivity extends AppCompatActivity {
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.d(LCAT, "============onStart=============");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        Log.d(LCAT, "============onStop=============");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        Log.d(LCAT, "============onPause=============");
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        Log.d(LCAT, "============onRestart=============");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Log.d(LCAT, "============onResume=============");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        Log.d(LCAT, "============onDestroy=============");
     }
 
     @Override
