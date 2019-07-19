@@ -10,17 +10,18 @@
     tools:context=".ImageUploadAndDownLoadActivity">
 
 
-
     <ImageView
+        android:id="@+id/image_upload_and_download_img"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:scaleType="fitXY"
         android:src="@mipmap/ic_launcher"
-        android:id="@+id/image_upload_and_download_img"/>
+        android:layout_marginLeft="160dp"
+        android:layout_marginTop="250dp"/>
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="100dp"
         android:layout_marginTop="20dp">
 
         <Button

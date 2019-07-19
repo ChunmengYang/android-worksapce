@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +28,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.ycm.ImagePreviewActivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -78,6 +81,7 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
         caremaBtn = findViewById(R.id.image_upload_and_download_carema);
         galleryBtn = findViewById(R.id.image_upload_and_download_gallery);
 
+        imageView.setOnClickListener(this);
         caremaBtn.setOnClickListener(this);
         galleryBtn.setOnClickListener(this);
 
@@ -100,6 +104,9 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.image_upload_and_download_img:
+                preview();
+                break;
             case R.id.image_upload_and_download_carema:
                 openCarema();
                 break;
@@ -107,6 +114,30 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
                 openGallery();
                 break;
         }
+    }
+
+    private void preview() {
+        int width = imageView.getWidth();
+        int height = imageView.getHeight();
+
+        int[] locationOnScreen = new int[2];
+        imageView.getLocationOnScreen(locationOnScreen);
+
+        Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
+
+        Intent intent = new Intent(ImageUploadAndDownLoadActivity.this, ImagePreviewActivity.class);
+
+        intent.putExtra("width", width);
+        intent.putExtra("height", height);
+        intent.putExtra("locationOnScreen", locationOnScreen);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte [] bitmapByte = baos.toByteArray();
+        intent.putExtra("bitmap", bitmapByte);
+
+        startActivity(intent);
+        overridePendingTransition(0,0);
     }
 
     private void openGallery() {

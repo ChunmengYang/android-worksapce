@@ -39,4 +39,5 @@ dependencies {
     implementation 'com.yanzhenjie.andserver:api:2.0.4'
     annotationProcessor 'com.yanzhenjie.andserver:processor:2.0.4'
     implementation 'androidx.annotation:annotation:1.0.2'
+    implementation'com.github.chrisbanes:PhotoView:1.2.6'
 }
