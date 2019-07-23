@@ -34,7 +34,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.ycm.ImagePreviewActivity"
+        <activity android:name=".ImagePreviewActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"></activity>
         <activity
             android:name=".ui.login.LoginActivity"

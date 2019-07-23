@@ -1,4 +1,4 @@
-package com.ycm;
+package com.ycm.demo;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -12,21 +12,24 @@ import android.graphics.Color;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 
 import uk.co.senab.photoview.PhotoView;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 public class ImagePreviewActivity extends Activity {
-
+    public static int statusBarHeight = 0;
     private RectF mScreenRect = null;
 
-    LinearLayout container;
+    FrameLayout container;
     ImageView imageView;
     PhotoView photoView;
+    ProgressBar progressBar;
 
     float scale = 1f;
     int translationX = 0;
@@ -36,7 +39,7 @@ public class ImagePreviewActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        container = new LinearLayout(this);
+        container = new FrameLayout(this);
         setContentView(container);
 
         mScreenRect = getDisplayPixes(this);
@@ -49,20 +52,24 @@ public class ImagePreviewActivity extends Activity {
             int width = intent.getIntExtra("width", 0);
             int height = intent.getIntExtra("height", 0);
             int[] locationOnScreen = intent.getIntArrayExtra("locationOnScreen");
-            int statusHeight = 0;
-            int resourceId = this.getResources().getIdentifier("status_bar_height", "dimen", "android");
-            if (resourceId > 0) {
-                statusHeight = this.getResources().getDimensionPixelSize(resourceId);
+            if (statusBarHeight == 0) {
+                int resourceId = this.getResources().getIdentifier("status_bar_height", "dimen", "android");
+                if (resourceId > 0) {
+                    statusBarHeight = this.getResources().getDimensionPixelSize(resourceId);
+                }
             }
-            locationOnScreen[1] -= statusHeight;
+
+            Log.d("ImagePreviewActivity", "==============" + statusBarHeight);
+            locationOnScreen[1] -= statusBarHeight;
 
             photoView = new PhotoView(this);
             photoView.setImageBitmap(bitmap);
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-            photoView.setLayoutParams(layoutParams);
+            FrameLayout.LayoutParams photoLayoutParams = new FrameLayout.LayoutParams((int) mScreenRect.width(), (int) mScreenRect.height());
+            photoView.setLayoutParams(photoLayoutParams);
             photoView.setOnPhotoTapListener(new PhotoViewAttacher.OnPhotoTapListener() {
                 @Override
                 public void onPhotoTap(View view, float x, float y) {
+
                     playCloseAnimation();
                 }
 
@@ -71,19 +78,27 @@ public class ImagePreviewActivity extends Activity {
 
                 }
             });
+            photoView.setVisibility(View.GONE);
+            container.addView(photoView);
 
             imageView = new ImageView(this);
             imageView.setImageBitmap(bitmap);
-            LinearLayout.LayoutParams imageLayoutParams = new LinearLayout.LayoutParams(width, height);
+            FrameLayout.LayoutParams imageLayoutParams = new FrameLayout.LayoutParams(width, height);
             imageLayoutParams.leftMargin = locationOnScreen[0];
             imageLayoutParams.topMargin = locationOnScreen[1];
             imageView.setLayoutParams(imageLayoutParams);
             container.addView(imageView);
 
+            progressBar = new ProgressBar(this);
+            progressBar.setIndeterminateDrawable(getResources().getDrawable(R.drawable.progress_small));
+            FrameLayout.LayoutParams progressLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, 150);
+            progressLayoutParams.topMargin = ((int) mScreenRect.height() - 150) / 2;
+            progressBar.setLayoutParams(progressLayoutParams);
+            container.addView(progressBar);
+
             scale = mScreenRect.width() / width;
             translationX = ((int) mScreenRect.width() - width) / 2 - locationOnScreen[0];
-            translationY = ((int) mScreenRect.height() - statusHeight - height) / 2 - locationOnScreen[1];
-
+            translationY = ((int) mScreenRect.height() - height) / 2 - locationOnScreen[1];
             playOpenAnimation();
         }
 
@@ -97,7 +112,7 @@ public class ImagePreviewActivity extends Activity {
                 .with(ObjectAnimator.ofFloat(imageView, "scaleX", 1, scale))
                 .with(ObjectAnimator.ofFloat(imageView, "scaleY", 1, scale))
                 .with(ObjectAnimator.ofArgb(container, "BackgroundColor", Color.TRANSPARENT, Color.BLACK));
-        set.setDuration(500);
+        set.setDuration(300);
         set.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -106,8 +121,9 @@ public class ImagePreviewActivity extends Activity {
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                    container.addView(photoView);
-                    imageView.setVisibility(View.GONE);
+                photoView.setVisibility(View.VISIBLE);
+                imageView.setVisibility(View.GONE);
+                progressBar.setVisibility(View.GONE);
             }
 
             @Override
@@ -124,7 +140,6 @@ public class ImagePreviewActivity extends Activity {
     }
 
     private void playCloseAnimation() {
-        photoView.setScale(1);
         imageView.setVisibility(View.VISIBLE);
         photoView.setVisibility(View.GONE);
 
@@ -134,7 +149,7 @@ public class ImagePreviewActivity extends Activity {
                 .with(ObjectAnimator.ofFloat(imageView, "scaleX", scale, 1))
                 .with(ObjectAnimator.ofFloat(imageView, "scaleY", scale, 1))
                 .with(ObjectAnimator.ofArgb(container, "BackgroundColor", Color.BLACK, Color.TRANSPARENT));
-        set.setDuration(500);
+        set.setDuration(300);
         set.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -170,7 +185,7 @@ public class ImagePreviewActivity extends Activity {
         overridePendingTransition(0, 0);
     }
 
-    private static RectF getDisplayPixes(Context context) {
+    public static RectF getDisplayPixes(Context context) {
         DisplayMetrics metrics = new DisplayMetrics();
         WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         manager.getDefaultDisplay().getMetrics(metrics);

@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -25,11 +26,10 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
-
-import com.ycm.ImagePreviewActivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -117,24 +117,47 @@ public class ImageUploadAndDownLoadActivity extends AppCompatActivity implements
     }
 
     private void preview() {
+        Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte [] bitmapByte = baos.toByteArray();
+
         int width = imageView.getWidth();
         int height = imageView.getHeight();
 
         int[] locationOnScreen = new int[2];
         imageView.getLocationOnScreen(locationOnScreen);
 
-        Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
+//        int[] locationOnScreen = new int[2];
+//        RectF mScreenRect = ImagePreviewActivity.getDisplayPixes(this);
+//        int width = (int)mScreenRect.width();
+//        int height = (int) mScreenRect.height() * (bitmap.getHeight() / bitmap.getWidth());
+//        locationOnScreen[0] = 0;
+//
+//        Rect rectangle = new Rect();
+//        Window window = getWindow();
+//        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+//        ImagePreviewActivity.statusBarHeight = rectangle.top;
+//
+//        if (ImagePreviewActivity.statusBarHeight == 0) {
+//            int resourceId = this.getResources().getIdentifier("status_bar_height", "dimen", "android");
+//            if (resourceId > 0) {
+//                ImagePreviewActivity.statusBarHeight = this.getResources().getDimensionPixelSize(resourceId);
+//            }
+//        }
+//        locationOnScreen[1] = ((int) mScreenRect.height() - height) / 2 + ImagePreviewActivity.statusBarHeight;
 
         Intent intent = new Intent(ImageUploadAndDownLoadActivity.this, ImagePreviewActivity.class);
-
         intent.putExtra("width", width);
         intent.putExtra("height", height);
         intent.putExtra("locationOnScreen", locationOnScreen);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte [] bitmapByte = baos.toByteArray();
         intent.putExtra("bitmap", bitmapByte);
+
+
+        Rect rectangle = new Rect();
+        Window window = getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+        ImagePreviewActivity.statusBarHeight = rectangle.top;
 
         startActivity(intent);
         overridePendingTransition(0,0);
