@@ -226,6 +226,7 @@ public class BluetoothAdmin {
                         }
                     }
                 });
+                buffer = new byte[1024];
             }
             inputStream.close();
         } catch (IOException e) {

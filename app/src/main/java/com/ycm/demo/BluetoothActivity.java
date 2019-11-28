@@ -4,10 +4,12 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -30,6 +32,8 @@ public class BluetoothActivity extends AppCompatActivity implements BluetoothAdm
 
 
     private BluetoothAdmin mBluetoothAdmin;
+
+    private Handler handler = new Handler();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,21 +54,21 @@ public class BluetoothActivity extends AppCompatActivity implements BluetoothAdm
             }
         });
         // 客户端
-//        devicesView = findViewById(R.id.bluetooth_device_list);
-//        adapter = new ScanResultAdapter(BluetoothActivity.this, R.layout.bluetooth_device_item, new ArrayList<BluetoothDevice>());
-//        devicesView.setAdapter(adapter);
-//        devicesView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//                BluetoothDevice device = adapter.getItem(position);
-//                mBluetoothAdmin.connect(device);
-//            }
-//        });
-//        mBluetoothAdmin.startDiscovery();
+        devicesView = findViewById(R.id.bluetooth_device_list);
+        adapter = new ScanResultAdapter(BluetoothActivity.this, R.layout.bluetooth_device_item, new ArrayList<BluetoothDevice>());
+        devicesView.setAdapter(adapter);
+        devicesView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                BluetoothDevice device = adapter.getItem(position);
+                mBluetoothAdmin.connect(device);
+            }
+        });
+        mBluetoothAdmin.startDiscovery();
 
         // 服务端
-        mBluetoothAdmin.createServer();
+//        mBluetoothAdmin.createServer();
     }
 
     @Override
@@ -80,47 +84,88 @@ public class BluetoothActivity extends AppCompatActivity implements BluetoothAdm
 
     @Override
     public void onConnectSuccess() {
-        msgView.setText("Connect Success");
-        msgView.setTextColor(Color.BLUE);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                msgView.setText("Connect Success");
+                msgView.setTextColor(Color.BLUE);
+            }
+        });
+
     }
 
     @Override
     public void onConnectFailed() {
-        msgView.setText("Connect Failed");
-        msgView.setTextColor(Color.RED);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                msgView.setText("Connect Failed");
+                msgView.setTextColor(Color.RED);
+            }
+        });
     }
 
     @Override
     public void onDisconnection() {
-        msgView.setText("Disconnection");
-        msgView.setTextColor(Color.RED);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                msgView.setText("Disconnection");
+                msgView.setTextColor(Color.RED);
+            }
+        });
 
         mBluetoothAdmin.createServer();
     }
 
     @Override
     public void onDiscoveryStarted() {
-        rwMsgView.setText("Discovery Started");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                rwMsgView.setText("Discovery Started");
+            }
+        });
     }
 
     @Override
     public void onDiscoveryFinished() {
-        rwMsgView.setText("Discovery Finished");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                rwMsgView.setText("Discovery Finished");
+            }
+        });
     }
 
     @Override
-    public void onRead(byte[] data, int length) {
-        rwMsgView.setText(new String(data));
+    public void onRead(final byte[] data, int length) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                rwMsgView.setText(new String(data));
+            }
+        });
     }
 
     @Override
     public void onReadFailed() {
-        rwMsgView.setText("Read Failed");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                rwMsgView.setText("Read Failed");
+            }
+        });
     }
 
     @Override
     public void onWriteFailed() {
-        rwMsgView.setText("Write Failed");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                rwMsgView.setText("Write Failed");
+            }
+        });
     }
 
     /*
