@@ -1,15 +1,6 @@
 <resources>
-    <string name="app_name">demo</string>
-    <string name="main_pie_chart">饼图报表</string>
-    <string name="main_scan_qrcode">扫描二维码</string>
-    <string name="main_scan_beacons">扫描信标</string>
-    <string name="main_scrolling">Scrolling</string>
-    <string name="main_list_popup">List Popup</string>
-    <string name="main_image_upload_and_download">头像上传下载</string>
-    <string name="main_ble">BLE</string>
-    <string name="main_webserver">WebServer</string>
-    <string name="main_wifi">Wi-Fi</string>
-    <string name="main_udp_broad_cast">UDP广播</string>
+    <string name="app_name">texhong</string>
+
 
     <!--zxing-->
     <string name="qrcode_scan">扫一扫</string>
