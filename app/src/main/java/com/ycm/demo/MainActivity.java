@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.ycm.CameraActivity;
 import com.ycm.demo.ui.login.LoginActivity;
 import com.ycm.webserver.WebServerActivity;
 import com.ycm.zxinglibrary.android.Intents;
@@ -38,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
             switch (item.getItemId()) {
                 case R.id.navigation_pie_chart:
                     mTextMessage.setText(R.string.main_pie_chart);
-                    Intent pieChartIntent = new Intent(MainActivity.this, PieChartActivity.class);
+                    Intent pieChartIntent = new Intent(MainActivity.this, CameraActivity.class);
                     startActivity(pieChartIntent);
                     return true;
                 case R.id.navigation_qrcode:
