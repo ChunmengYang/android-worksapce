@@ -49,7 +49,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 WifiP2pDevice result = mScanResultAdapter.getItem(position);
-                clientManager.connect(result, 8988);
+                clientManager.connect(result);
             }
         });
 
@@ -76,6 +76,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
                     // 开始搜索P2P设备
                     mScanResultAdapter.clear();
                     clientManager.startDiscover();
+                    msgView.setText("正在搜索...");
                 }
             });
             stopSearchBtn.setOnClickListener(new View.OnClickListener() {
@@ -83,6 +84,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
                 public void onClick(View v) {
                     // 停止搜索P2P设
                     clientManager.stopDiscover();
+                    msgView.setText("");
                 }
             });
         } else {
@@ -94,7 +96,6 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
     public void onPeers(Collection<WifiP2pDevice> peerList) {
         mScanResultAdapter.clear();
         if (peerList.size() == 0) {
-            msgView.setText("没有搜索到P2P设备");
             return;
         }
 
@@ -112,7 +113,7 @@ public class WifiDirectClientActivity extends AppCompatActivity implements WifiD
     @Override
     public void onDisconnection() {
         currentWifiP2pinfo = null;
-        msgView.setText("已失去连接");
+        msgView.setText("未连接到P2P设备");
     }
 
     @Override

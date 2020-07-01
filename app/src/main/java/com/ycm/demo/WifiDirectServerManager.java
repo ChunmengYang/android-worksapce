@@ -241,10 +241,11 @@ public class WifiDirectServerManager {
             try {
                 serverSocket = new ServerSocket(port[0]);
 
-                socket = serverSocket.accept();
-
-                // 从Socket当中得到InputStream对象
-                read(socket.getInputStream());
+                while (!serverSocket.isClosed()) {
+                    socket = serverSocket.accept();
+                    // 从Socket当中得到InputStream对象
+                    read(socket.getInputStream());
+                }
 
             } catch (Exception e) {
                 Log.e(LCAT, e.getMessage());

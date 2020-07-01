@@ -56,7 +56,7 @@ public class WifiDirectClientManager {
     private Handler mHandler = new Handler();
 
     private ClientAsyncTask asyncTask;
-    private int port;
+    private static final int port = 8988;
 
     public WifiDirectClientManager(Context context, WifiDirectClientManager.ActionListener actionListener) {
         this.context = context;
@@ -138,7 +138,7 @@ public class WifiDirectClientManager {
     /*
      * 连接Wi-Fi P2P设备
      */
-    public void connect(final WifiP2pDevice device, int port) {
+    public void connect(final WifiP2pDevice device) {
         if (!isWifiP2pEnabled) return;
 
         if (device == null) return;
@@ -147,7 +147,6 @@ public class WifiDirectClientManager {
             cancelConnect();
         }
 
-        this.port = port;
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
@@ -190,7 +189,7 @@ public class WifiDirectClientManager {
 
             @Override
             public void onFailure(int reason) {
-                Log.d(LCAT, "=========Cancel Connect Device Failure=========");
+                Log.d(LCAT, "=========Cancel Connect Device Failure=========" + reason);
             }
         });
     }
@@ -240,6 +239,7 @@ public class WifiDirectClientManager {
             @Override
             public void run() {
                 Log.d(LCAT, "=========Connect Device Success=========" + info.groupOwnerAddress.getHostName());
+                Log.d(LCAT, "=========Connect Device Success=========" + info.groupOwnerAddress.getAddress().toString());
             }
         }.start();
     }
@@ -280,7 +280,6 @@ public class WifiDirectClientManager {
                     mWifiP2pManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
                         @Override
                         public void onConnectionInfoAvailable(WifiP2pInfo info) {
-
                             if (info.groupFormed && info.isGroupOwner) {
                                 // 作为服务器
 
@@ -363,6 +362,8 @@ public class WifiDirectClientManager {
             } catch (Exception e) {
                 Log.e(LCAT, e.getMessage());
             }
+
+            Log.d(LCAT, "=========doInBackground Wi-Fi Direct数据接收Socket已关闭=========");
             return null;
         }
 
@@ -420,9 +421,15 @@ public class WifiDirectClientManager {
 
         @Override
         protected void onPostExecute(Void aVoid) {
+            Log.d(LCAT, "=========onPostExecute=========");
             if (weakReference.get() != null) {
                 weakReference.get().dataCompleted();
             }
+        }
+
+        @Override
+        protected void onCancelled(Void aVoid) {
+            Log.d(LCAT, "=========onCancelled=========");
         }
     }
 }
