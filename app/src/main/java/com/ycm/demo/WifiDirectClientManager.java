@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
-import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -149,7 +148,8 @@ public class WifiDirectClientManager {
 
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
-        config.wps.setup = WpsInfo.PBC;
+        // WPS按钮认证，服务端会弹出信任按钮：config.wps.setup = WpsInfo.PBC
+        // WPS的PIN码参数，服务端会弹出PIN码输入框，客户端会弹出PIN码显示框：config.wps.setup = WpsInfo.DISPLAY
 
         mWifiP2pManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
